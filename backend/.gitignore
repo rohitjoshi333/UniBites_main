@@ -1,3 +1,10 @@
-venv
-unibites/users/migrations/
-unibites/unibites/__pycache__/
+venv/
+.env
+__pycache__/
+*.py[cod]
+*.pyc
+db.sqlite3
+.DS_Store
+.pytest_cache/
+.mypy_cache/
+pip-wheel-metadata/
