@@ -86,7 +86,9 @@ const handleLogin = async () => {
           onChangeText={setPassword}
         />
 
-        <Text style={styles.forgot}>Forgot password?</Text>
+        <Text style={styles.forgot} onPress={() => router.push("/forgot-password")}>
+          Forgot password?
+        </Text>
 
         {/* IMAGE SECTION */}
         <View style={styles.imageWrapper}>

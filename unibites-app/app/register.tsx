@@ -59,18 +59,26 @@ export default function RegisterScreen() {
       const data = await response.json();
 
       if (!response.ok) {
-        console.log("Register error:", data);
         Alert.alert("Register failed", data.detail || "Please try again.");
         return;
       }
 
       Alert.alert(
         "Registered",
-        "Account created. Please check your email for OTP verification."
+        "Account created. Please enter the OTP sent to your email.",
+        [
+          {
+            text: "OK",
+            onPress: () => {
+              router.replace({
+                pathname: "/verify-otp",
+                params: { email },
+              });
+            },
+          },
+        ]
       );
 
-      // go back to login
-      router.replace("/");
     } catch (error) {
       console.error(error);
       Alert.alert("Error", "Something went wrong. Check your network.");
