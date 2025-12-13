@@ -1,110 +1,216 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, Button, StyleSheet, Alert,} from "react-native";
+import {
+  View,
+  Text,
+  TextInput,
+  StyleSheet,
+  Alert,
+  Image,
+  TouchableOpacity,
+} from "react-native";
 import { Link, router } from "expo-router";
 import { API_BASE_URL } from "../constants/api";
 
 export default function LoginScreen() {
-  const [email, setEmail] = useState<string>("");
-  const [password, setPassword] = useState<string>("");
-  const [loading, setLoading] = useState<boolean>(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
-  const handleLogin = async () => {
-    if (!email || !password) {
-      Alert.alert("Error", "Please enter email and password.");
+const handleLogin = async () => {
+  if (!email || !password) {
+    Alert.alert("Error", "Please enter email and password.");
+    return;
+  }
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/auth/login/`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email,
+        password,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      Alert.alert("Login failed", data.detail || "Invalid credentials");
       return;
     }
 
-    try {
-      setLoading(true);
+    // Backend bata full name ley mero vai
+    const fullName =
+      data.full_name ||
+      data.user?.full_name ||
+      "User";
 
-      const response = await fetch(`${API_BASE_URL}/api/auth/login/`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email,
-          password,
-        }),
-      });
+    // Hard code garnu hudaina - Dynamic data pathaune
+    router.replace({
+      pathname: "/home",
+      params: { fullName },
+    });
 
-      const data = await response.json();
-      if (!response.ok) {
-        console.log("Login error:", data);
-        Alert.alert("Login failed", data.detail || "Invalid credentials.");
-        return;
-      }
+  } catch (error) {
+    Alert.alert("Error", "Network error. Check backend connection.");
+  }
+};
 
-      const fullName =
-        data.user?.full_name || data.full_name || "User";
-
-      router.replace({
-        pathname: "/home",
-        params: { fullName },
-      });
-    } catch (error) {
-      console.error(error);
-      Alert.alert("Error", "Something went wrong. Check your network.");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Login</Text>
-
-      <TextInput
-        style={styles.input}
-        placeholder="College Email"
-        keyboardType="email-address"
-        autoCapitalize="none"
-        value={email}
-        onChangeText={setEmail}
+    <View style={styles.screen}>
+      {/* Logo */}
+      <Image
+        source={require("../assets/images/UniBites.png")}
+        style={styles.logo}
       />
 
-      <TextInput
-        style={styles.input}
-        placeholder="Password"
-        secureTextEntry
-        value={password}
-        onChangeText={setPassword}
-      />
+      {/* Card */}
+      <View style={styles.card}>
+        <Text style={styles.heading}>Sign in to your account</Text>
 
-      <Button title={"Login"} onPress={handleLogin}/>
+        <TextInput
+          style={styles.input}
+          placeholder="College Email"
+          value={email}
+          onChangeText={setEmail}
+          autoCapitalize="none"
+        />
 
-      <View style={{ height: 16 }} />
+        <TextInput
+          style={styles.input}
+          placeholder="Password"
+          secureTextEntry
+          value={password}
+          onChangeText={setPassword}
+        />
 
-      <Link href="/register" style={styles.linkText}>
-        Don&apos;t have an account? Register
-      </Link>
+        <Text style={styles.forgot}>Forgot password?</Text>
+
+        {/* IMAGE SECTION */}
+        <View style={styles.imageWrapper}>
+          <Image
+            source={require("../assets/images/Coffee_station.png")}
+            style={styles.bgImage}
+          />
+
+          {/* Image will be behind the btns as btn is on top of the img */}
+          <TouchableOpacity style={styles.signInBtn} onPress={handleLogin}>
+            <Text style={styles.signInText}>Sign In</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.createBtn}
+            onPress={() => router.push("/register")}
+          >
+            <Text style={styles.createText}>Create new account</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      <Text style={styles.footer}>
+        By continuing, you agree to our Terms & Privacy Policy
+      </Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  screen: {
     flex: 1,
-    padding: 24,
-    justifyContent: "center",
+    backgroundColor: "#f7f7f7ff",
+    alignItems: "center",
+    paddingTop: 10,
   },
-  title: {
-    fontSize: 30,
+
+  logo: {
+    width: 160,
+    height: 150,
+    resizeMode: "contain",
+    marginBottom: 1,
+  },
+
+  card: {
+    width: "90%",
+    backgroundColor: "#ffffffff",
+    borderRadius: 16,
+    padding: 1,
+    elevation: 6,
+    overflow: "hidden",
+  },
+
+  heading: {
+    fontSize: 18,
     fontWeight: "600",
-    marginBottom: 18,
-    textAlign: "center",
+    padding: 20,
   },
+
   input: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 4,
+    marginHorizontal: 20,
     marginBottom: 12,
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 8,
+    padding: 12,
   },
-  linkText: {
+
+  forgot: {
+    textAlign: "right",
+    marginRight: 20,
+    marginBottom: 10,
+    color: "#2e3566ff",
+    fontSize: 12,
+  },
+
+  /* IMAGE CONTAINER */
+  imageWrapper: {
+    width: "100%",
+    height: 350,
+    position: "relative",
+  },
+
+  bgImage: {
+    position: "absolute",
+    width: "100%",
+    height: "100%",
+    resizeMode: "cover",
+    borderRadius: 12,
+  },
+
+  signInBtn: {
+    backgroundColor: "#2e3566ea",
+    marginHorizontal: 20,
+    marginTop: 20,
+    paddingVertical: 14,
+    borderRadius: 10,
+  },
+
+  signInText: {
+    color: "#fff",
     textAlign: "center",
-    color: "black",
-    textDecorationLine: "underline",
+    fontWeight: "600",
+  },
+
+  createBtn: {
+    backgroundColor: "#fff",
+    marginHorizontal: 20,
+    marginTop: 16,
+    paddingVertical: 14,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#2E3566",
+  },
+
+  createText: {
+    color: "#2E3566",
+    textAlign: "center",
+    fontWeight: "600",
+  },
+
+  footer: {
+    marginTop: 20,
+    fontSize: 12,
+    color: "#999",
   },
 });
