@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
+from django.conf import settings
 
 
 class UserManager(BaseUserManager):
@@ -51,3 +52,27 @@ class User(AbstractUser):
 
     def __str__(self):
         return f"{self.full_name} ({self.role})"
+
+# Canteen Model
+
+class Canteen(models.Model):
+    name = models.CharField(max_length=150)
+    location = models.CharField(max_length=255)
+    opening_time = models.CharField(max_length=50)   # simple for now
+    closing_time = models.CharField(max_length=50)
+    rating = models.DecimalField(max_digits=2, decimal_places=1, default=4.0)
+    total_items = models.PositiveIntegerField(default=0)
+
+    # later vendors will be linked
+    vendor = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        limit_choices_to={"role": "VENDOR"},
+    )
+
+    is_active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return self.name

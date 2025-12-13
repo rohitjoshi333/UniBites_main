@@ -1,9 +1,10 @@
 from django.contrib import admin
-from .models import User
+from .models import User, Canteen
 
 
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
+    
     list_display = ( "email", "full_name", "role", "is_email_verified", "is_active", "is_staff",)
 
     list_filter = ("role", "is_email_verified", "is_active", "is_staff",)
@@ -25,3 +26,19 @@ class UserAdmin(admin.ModelAdmin):
         
         ("Important Dates", {"fields": ("last_login", "date_joined",)}),
     )
+
+@admin.register(Canteen)
+class CanteenAdmin(admin.ModelAdmin):
+    list_display = (
+        "name",
+        "location",
+        "opening_time",
+        "closing_time",
+        "rating",
+        "total_items",
+        "is_active",
+    )
+
+    list_filter = ("is_active",)
+    search_fields = ("name", "location")
+    ordering = ("name",)

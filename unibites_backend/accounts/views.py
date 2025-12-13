@@ -2,13 +2,14 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from .serializers import (
+    CanteenSerializer,
     RegisterSerializer,
     VerifyOtpSerializer,
     LoginSerializer,
     ForgotPasswordSerializer,
     ResetPasswordSerializer,
 )
-from .models import User
+from .models import User, Canteen
 from django.utils import timezone
 from datetime import timedelta
 import random
@@ -104,3 +105,12 @@ class ResetPasswordView(APIView):
         user.save()
 
         return Response({"message": "Password changed successfully."})
+
+class CanteenListView(APIView):
+    """
+    GET /api/canteens/
+    """
+    def get(self, request):
+        canteens = Canteen.objects.filter(is_active=True)
+        serializer = CanteenSerializer(canteens, many=True)
+        return Response(serializer.data)

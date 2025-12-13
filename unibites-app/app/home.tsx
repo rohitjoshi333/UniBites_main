@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -6,14 +6,40 @@ import {
   Image,
   TextInput,
   ScrollView,
-  TouchableOpacity,
 } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { API_BASE_URL } from "../constants/api";
+
+type Canteen = {
+  id: number;
+  name: string;
+  location: string;
+  opening_time: string;
+  closing_time: string;
+  rating: number;
+  total_items: number;
+};
 
 export default function HomeScreen() {
   const params = useLocalSearchParams<{ fullName?: string }>();
   const fullName = params.fullName || "User";
+
+  const [canteens, setCanteens] = useState<Canteen[]>([]);
+
+  useEffect(() => {
+    fetchCanteens();
+  }, []);
+
+  const fetchCanteens = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/canteens/`);
+      const data = await response.json();
+      setCanteens(data);
+    } catch (error) {
+      console.log("Failed to load canteens", error);
+    }
+  };
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -27,7 +53,9 @@ export default function HomeScreen() {
       </View>
 
       {/* Welcome */}
-      <Text style={styles.welcomeText}>Welcome, {fullName.toUpperCase()}</Text>
+      <Text style={styles.welcomeText}>
+        Welcome, {fullName.toUpperCase()}
+      </Text>
       <Text style={styles.subText}>
         Fuel Your Campus, One Bite at a Time
       </Text>
@@ -49,45 +77,32 @@ export default function HomeScreen() {
         </Text>
       </View>
 
-      {/* Featured */}
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Featured Today</Text>
-        <Text style={styles.seeAll}>See All</Text>
-      </View>
-
-      <View style={styles.featuredRow}>
-        <View style={styles.featuredCard}>
-          <Text style={styles.foodTitle}>MOMO</Text>
-          <Text style={styles.foodSub}>One More Bite</Text>
-        </View>
-
-        <View style={styles.featuredCard}>
-          <Text style={styles.foodTitle}>Pizza</Text>
-          <Text style={styles.foodSub}>Brit cafe</Text>
-        </View>
-      </View>
-
       {/* All Canteens */}
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>All Canteens</Text>
       </View>
 
-      <View style={styles.canteenCard}>
-        <View>
-          <Text style={styles.canteenName}>Brit cafe</Text>
-          <Text style={styles.canteenSub}>Near Alumni Block</Text>
-          <Text style={styles.canteenTime}>7:00 - 20:00</Text>
-        </View>
+      {canteens.map((canteen) => (
+        <View key={canteen.id} style={styles.canteenCard}>
+          <View>
+            <Text style={styles.canteenName}>{canteen.name}</Text>
+            <Text style={styles.canteenSub}>{canteen.location}</Text>
+            <Text style={styles.canteenTime}>
+              {canteen.opening_time} - {canteen.closing_time}
+            </Text>
+          </View>
 
-        <View style={styles.rightInfo}>
-          <Text style={styles.rating}>⭐ 4.3</Text>
-          <View style={styles.itemBadge}>
-            <Text style={styles.itemText}>6 items</Text>
+          <View style={styles.rightInfo}>
+            <Text style={styles.rating}>⭐ {canteen.rating}</Text>
+            <View style={styles.itemBadge}>
+              <Text style={styles.itemText}>
+                {canteen.total_items} items
+              </Text>
+            </View>
           </View>
         </View>
-      </View>
+      ))}
 
-      {/* Bottom Spacer */}
       <View style={{ height: 40 }} />
     </ScrollView>
   );
@@ -170,35 +185,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "700",
     color: "#1E2A5A",
-  },
-
-  seeAll: {
-    fontSize: 13,
-    color: "#4F46E5",
-  },
-
-  featuredRow: {
-    flexDirection: "row",
-    marginTop: 12,
-  },
-
-  featuredCard: {
-    width: 140,
-    height: 100,
-    backgroundColor: "#F9FAFB",
-    borderRadius: 12,
-    padding: 12,
-    marginRight: 12,
-    justifyContent: "flex-end",
-  },
-
-  foodTitle: {
-    fontWeight: "700",
-  },
-
-  foodSub: {
-    fontSize: 12,
-    color: "#6B7280",
   },
 
   canteenCard: {

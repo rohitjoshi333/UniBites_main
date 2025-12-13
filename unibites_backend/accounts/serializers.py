@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.utils import timezone
 from datetime import timedelta
-from .models import User
+from .models import User, Canteen
 import random
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -118,3 +118,17 @@ class ResetPasswordSerializer(serializers.Serializer):
         if data["new_password"] != data["new_password2"]:
             raise serializers.ValidationError("Passwords do not match.")
         return data
+
+class CanteenSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Canteen
+        fields = [
+            "id",
+            "name",
+            "location",
+            "opening_time",
+            "closing_time",
+            "rating",
+            "total_items",
+        ]
+        
