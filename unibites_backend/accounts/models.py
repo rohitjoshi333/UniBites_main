@@ -53,12 +53,12 @@ class User(AbstractUser):
     def __str__(self):
         return f"{self.full_name} ({self.role})"
 
-# Canteen Model
 
+# Canteen Model
 class Canteen(models.Model):
     name = models.CharField(max_length=150)
     location = models.CharField(max_length=255)
-    opening_time = models.CharField(max_length=50)   # simple for now
+    opening_time = models.CharField(max_length=50)
     closing_time = models.CharField(max_length=50)
     rating = models.DecimalField(max_digits=2, decimal_places=1, default=4.0)
     total_items = models.PositiveIntegerField(default=0)

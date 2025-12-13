@@ -29,16 +29,10 @@ class UserAdmin(admin.ModelAdmin):
 
 @admin.register(Canteen)
 class CanteenAdmin(admin.ModelAdmin):
-    list_display = (
-        "name",
-        "location",
-        "opening_time",
-        "closing_time",
-        "rating",
-        "total_items",
-        "is_active",
-    )
+    list_display = ("name", "location", "opening_time", "closing_time", "rating", "total_items", "is_active",)
 
     list_filter = ("is_active",)
+    
     search_fields = ("name", "location")
+    
     ordering = ("name",)

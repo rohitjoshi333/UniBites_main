@@ -44,7 +44,7 @@ class RegisterSerializer(serializers.ModelSerializer):
 
         user.save()
 
-        # In real app: send email here
+        # In real app: email lai kei kaso gari hami eta set garney xam tesko lagi ajai tutorial haru hernu parney hunxa guys haru peace :)
         print("DEBUG OTP for", user.email, "=", otp)
 
         return user
