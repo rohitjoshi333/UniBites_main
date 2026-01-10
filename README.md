@@ -41,7 +41,7 @@ UniBites is a university-focused food ordering and canteen management applicatio
 - Django
 - Django REST Framework
 - Simple JWT for authentication
-- SQLite / PostgreSQL (configurable)
+- PostgreSQL
 
 ---
 
@@ -77,9 +77,4 @@ UniBites is a university-focused food ordering and canteen management applicatio
 ---
 
 ## 👨‍💻 Author
-Developed as a university project with a focus on clean architecture, security best practices, and real-world authentication flows.
-
----
-
-## 📜 License
-This project is for educational and academic purposes.
+Rohit Joshi
