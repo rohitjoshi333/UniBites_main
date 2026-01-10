@@ -8,6 +8,8 @@ import {
   StyleSheet,
   Alert,
   ScrollView,
+  Image,
+  TouchableOpacity,
 } from "react-native";
 import { Link, router } from "expo-router";
 import { API_BASE_URL } from "../constants/api";
@@ -88,74 +90,233 @@ export default function RegisterScreen() {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Register</Text>
-
-      <TextInput
-        style={styles.input} placeholder="Full Name" value={fullName} onChangeText={setFullName}
+    <View style={styles.screen}>
+      {/* App logo */}
+      <Image
+        source={require("../assets/images/UniBites.png")}
+        style={styles.logo}
       />
 
-      <TextInput
-        style={styles.input} placeholder="College Email" keyboardType="email-address" autoCapitalize="none" value={email} onChangeText={setEmail}
-      />
+      {/* Main card */}
+      <View style={styles.card}>
+        <Text style={styles.heading}>Create a new account</Text>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Phone (optional)"
-        keyboardType="phone-pad"
-        value={phone}
-        onChangeText={setPhone}
-      />
+        <TextInput
+          style={styles.input}
+          placeholder="Full Name"
+          value={fullName}
+          onChangeText={setFullName}
+        />
 
-      <TextInput
-        style={styles.input}
-        placeholder="Password"
-        secureTextEntry
-        value={password}
-        onChangeText={setPassword}
-      />
+        <TextInput
+          style={styles.input}
+          placeholder="College Email"
+          value={email}
+          onChangeText={setEmail}
+          autoCapitalize="none"
+          keyboardType="email-address"
+        />
 
-      <TextInput
-        style={styles.input}
-        placeholder="Confirm Password"
-        secureTextEntry
-        value={confirmPassword}
-        onChangeText={setConfirmPassword}/>
+        {/* Phone with Nepali country code */}
+        <View style={styles.phoneContainer}>
+          <Text style={styles.countryCode}>+977</Text>
+          <TextInput
+            style={styles.phoneInput}
+            placeholder="98XXXXXXXX"
+            keyboardType="number-pad"
+            maxLength={10}
+            value={phone}
+            onChangeText={setPhone}
+          />
+        </View>
 
-      <Button title={"Register"} onPress={handleRegister}/>
+        <TextInput
+          style={styles.input}
+          placeholder="Password"
+          secureTextEntry
+          value={password}
+          onChangeText={setPassword}
+        />
 
-      <View style={{ height: 16 }} />
+        <TextInput
+          style={styles.input}
+          placeholder="Confirm Password"
+          secureTextEntry
+          value={confirmPassword}
+          onChangeText={setConfirmPassword}
+        />
 
-      <Link href="/" style={styles.linkText}>
-        Already have an account? Login
-      </Link>
-    </ScrollView>
+        {/* Image + actions */}
+        <View style={styles.imageWrapper}>
+          <Image
+            source={require("../assets/images/Coffee_station.png")}
+            style={styles.bgImage}
+          />
+
+          <TouchableOpacity
+            style={styles.primaryBtn}
+            onPress={handleRegister}
+          >
+            <Text style={styles.primaryText}>Register</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.secondaryBtn}
+            onPress={() => router.push("/")}
+          >
+            <Text style={styles.secondaryText}>Already have an account</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Terms */}
+        <Text style={styles.footer}>
+          By continuing, you agree to our Terms & Privacy Policy
+        </Text>
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flexGrow: 1,
-    padding: 24,
-    justifyContent: "center",
+  screen: {
+    flex: 1,
+    backgroundColor: "#FFFFFF",
+    alignItems: "center",
+    paddingTop: 14,
   },
-  title: {
-    fontSize: 24,
-    fontWeight: "600",
-    marginBottom: 16,
-    textAlign: "center",
+
+  logo: {
+    width: 150,
+    height: 130,
+    resizeMode: "contain",
+    marginBottom: 6,
   },
+
+  card: {
+    width: "90%",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 18,
+    paddingBottom: 12,
+    elevation: 8,
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    overflow: "hidden",
+  },
+
+  heading: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#1E1E1E",
+    paddingHorizontal: 20,
+    paddingVertical: 18,
+  },
+
   input: {
+    marginHorizontal: 20,
+    marginBottom: 14,
     borderWidth: 1,
-    borderColor: "#ccc",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 4,
-    marginBottom: 12,
+    borderColor: "#E2E5EC",
+    borderRadius: 10,
+    paddingVertical: 13,
+    paddingHorizontal: 14,
+    fontSize: 14,
+    backgroundColor: "#FAFAFC",
   },
-  linkText: {
+
+  phoneContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginHorizontal: 20,
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: "#E2E5EC",
+    borderRadius: 10,
+    backgroundColor: "#FAFAFC",
+  },
+
+  countryCode: {
+    paddingHorizontal: 14,
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#555",
+    borderRightWidth: 1,
+    borderRightColor: "#E2E5EC",
+  },
+
+  phoneInput: {
+    flex: 1,
+    paddingVertical: 13,
+    paddingHorizontal: 14,
+    fontSize: 14,
+  },
+
+  imageWrapper: {
+    width: "100%",
+    height: 220,
+    marginTop: 6,
+    borderTopWidth: 1,
+    borderTopColor: "#ECEEF4",
+    position: "relative",
+    shadowColor: "#000",
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: -2 },
+  },
+
+  bgImage: {
+    position: "absolute",
+    width: "100%",
+    height: "100%",
+    resizeMode: "cover",
+    borderBottomLeftRadius: 18,
+    borderBottomRightRadius: 18,
+    opacity: 0.95,
+  },
+
+  primaryBtn: {
+    backgroundColor: "#2E3566",
+    marginHorizontal: 20,
+    marginTop: 22,
+    paddingVertical: 15,
+    borderRadius: 12,
+    shadowColor: "#2E3566",
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 4 },
+  },
+
+  primaryText: {
+    color: "#FFFFFF",
     textAlign: "center",
-    color: "black",
-    textDecorationLine: "underline",
+    fontSize: 15,
+    fontWeight: "600",
+  },
+
+  secondaryBtn: {
+    backgroundColor: "#FFFFFF",
+    marginHorizontal: 20,
+    marginTop: 14,
+    paddingVertical: 14,
+    borderRadius: 12,
+    borderWidth: 1.2,
+    borderColor: "#2E3566",
+  },
+
+  secondaryText: {
+    color: "#2E3566",
+    textAlign: "center",
+    fontSize: 14,
+    fontWeight: "600",
+  },
+
+  footer: {
+    marginTop: 14,
+    fontSize: 12,
+    color: "#9AA0B4",
+    textAlign: "center",
+    paddingHorizontal: 24,
+    lineHeight: 16,
   },
 });

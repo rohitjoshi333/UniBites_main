@@ -22,12 +22,24 @@ class RegisterSerializer(serializers.ModelSerializer):
                 "Use your college email (@islingtoncollege.edu.np)."
             )
         return value
-
+    
+    def validate_phone(self, value):
+        
+        if not value.isdigit():
+            raise serializers.ValidationError("Phone number must contain only digits.")
+        
+        if len(value) != 10:
+            raise serializers.ValidationError("Phone number must be 10 digits long.")
+        
+        if not value.startswith("98") and not value.startswith("97"):
+            raise serializers.ValidationError("Enter a Valid Phone number.")
+        return value
+    
     def validate(self, data):
         if data["password"] != data["password2"]:
             raise serializers.ValidationError("Passwords do not match.")
         return data
-
+    
     def create(self, validated_data):
         validated_data.pop("password2")  # we don't save this
         password = validated_data.pop("password")
@@ -53,17 +65,26 @@ class VerifyOtpSerializer(serializers.Serializer):
     email = serializers.EmailField()
     otp = serializers.CharField(max_length=6)
 
+class VerifyOtpSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    otp = serializers.CharField(max_length=6)
+
     def validate(self, data):
         try:
             user = User.objects.get(email=data["email"])
         except User.DoesNotExist:
             raise serializers.ValidationError("User not found.")
 
-        if user.otp_code != data["otp"]:
-            raise serializers.ValidationError("Wrong OTP.")
+        if not user.otp_code:
+            raise serializers.ValidationError("OTP invalid or already used.")
 
+        # Comparison (only latest OTP works)
+        if user.otp_code != data["otp"].strip():
+            raise serializers.ValidationError("Invalid OTP.")
+
+        # Expiry check
         if user.otp_expires_at and user.otp_expires_at < timezone.now():
-            raise serializers.ValidationError("OTP expired. Please register again.")
+            raise serializers.ValidationError("OTP expired. Please resend.")
 
         data["user"] = user
         return data
@@ -117,6 +138,20 @@ class ResetPasswordSerializer(serializers.Serializer):
     def validate(self, data):
         if data["new_password"] != data["new_password2"]:
             raise serializers.ValidationError("Passwords do not match.")
+        
+        try:
+            user = User.objects.get(email=data["email"])
+        except User.DoesNotExist:
+            raise serializers.ValidationError("Invalid email.")
+
+        if user.check_password(data["new_password"]):
+            raise serializers.ValidationError("New password must be different from the old password.")
+        
+        if user.otp_code != data["otp"]:
+            raise serializers.ValidationError("Invalid OTP.")
+        
+        if user.otp_expires_at and user.otp_expires_at < timezone.now():
+            raise serializers.ValidationError("OTP has expired.")
         return data
 
 class CanteenSerializer(serializers.ModelSerializer):

@@ -15,11 +15,11 @@ DEBUG = True
 
 ALLOWED_HOSTS = ["*"]
 
-CSRF_TRUSTED_ORIGINS = [
-    "http://localhost:8000",
-    "http://127.0.0.1:8000",
-    "http://192.168.1.64:8000",
-]
+# CSRF_TRUSTED_ORIGINS = [
+#     "http://localhost:8000",
+#     "http://127.0.0.1:8000",
+#     "http://192.168.1.64:8000",
+# ]
 
 # Application definition
 
@@ -79,8 +79,8 @@ DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
         "NAME": "unibites_db",
-        "USER": "unibites_user",
-        "PASSWORD": "unibites123",
+        "USER": "postgres",
+        "PASSWORD": "rohit",
         "HOST": "localhost",
         "PORT": "5432",
     }

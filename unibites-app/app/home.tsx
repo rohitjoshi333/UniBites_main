@@ -8,7 +8,7 @@ import {
   ScrollView,
 } from "react-native";
 import { useLocalSearchParams } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
+import { FontAwesome, Ionicons } from "@expo/vector-icons";
 import { API_BASE_URL } from "../constants/api";
 
 type Canteen = {
@@ -92,14 +92,18 @@ export default function HomeScreen() {
             </Text>
           </View>
 
-          <View style={styles.rightInfo}>
-            <Text style={styles.rating}>⭐ {canteen.rating}</Text>
-            <View style={styles.itemBadge}>
-              <Text style={styles.itemText}>
-                {canteen.total_items} items
-              </Text>
-            </View>
+        <View style={styles.rightInfo}>
+          <View style={styles.ratingRow}>
+            <FontAwesome name="star" size={14} color="#F5A623" />
+            <Text style={styles.ratingText}>{canteen.rating}</Text>
           </View>
+
+          <View style={styles.itemBadge}>
+            <Text style={styles.itemText}>
+              {canteen.total_items} items
+            </Text>
+          </View>
+        </View>
         </View>
       ))}
 
@@ -215,9 +219,16 @@ const styles = StyleSheet.create({
     alignItems: "flex-end",
   },
 
-  rating: {
-    fontSize: 12,
-    marginBottom: 6,
+  ratingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+
+  ratingText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#333",
   },
 
   itemBadge: {

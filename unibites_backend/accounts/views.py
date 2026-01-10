@@ -70,7 +70,7 @@ class ForgotPasswordView(APIView):
 
         otp = f"{random.randint(100000, 999999)}"
         user.otp_code = otp
-        user.otp_expires_at = timezone.now() + timedelta(minutes=10)
+        user.otp_expires_at = timezone.now() + timedelta(seconds=120)
         user.save()
 
         print("DEBUG reset OTP for", user.email, "=", otp)
@@ -105,6 +105,45 @@ class ResetPasswordView(APIView):
         user.save()
 
         return Response({"message": "Password changed successfully."})
+    
+class ResendOtpView(APIView):
+    def post(self, request):
+        email = request.data.get("email")
+
+        if not email:
+            return Response(
+                {"detail": "Email is required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            return Response(
+                {"detail": "User not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if user.is_email_verified:
+            return Response(
+                {"detail": "Email already verified."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Note: invalidate old OTP FIRST
+        user.otp_code = None
+        user.otp_expires_at = None
+        user.save(update_fields=["otp_code", "otp_expires_at"])
+
+        # Generate NEW OTP
+        otp = f"{random.randint(100000, 999999)}"
+        user.otp_code = otp
+        user.otp_expires_at = timezone.now() + timedelta(minutes=5)
+        user.save(update_fields=["otp_code", "otp_expires_at"])
+
+        print("DEBUG NEW OTP for", user.email, "=", otp)
+
+        return Response({"message": "OTP resent successfully."})
 
 class CanteenListView(APIView):
     """
