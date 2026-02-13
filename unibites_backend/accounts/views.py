@@ -153,3 +153,19 @@ class CanteenListView(APIView):
         canteens = Canteen.objects.filter(is_active=True)
         serializer = CanteenSerializer(canteens, many=True)
         return Response(serializer.data)
+
+from rest_framework import permissions
+class VendorCanteenView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        if user.role != "VENDOR":
+            return Response({"error": "Not a vendor"}, status=403)
+        
+        canteen = Canteen.objects.filter(vendor=user).first()
+        if not canteen:
+            return Response({"error": "No canteen assigned"}, status=404)
+        
+        serializer = CanteenSerializer(canteen)
+        return Response(serializer.data)

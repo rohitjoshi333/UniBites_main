@@ -6,8 +6,9 @@ import {
   Image,
   TextInput,
   ScrollView,
+  TouchableOpacity,
 } from "react-native";
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { FontAwesome, Ionicons } from "@expo/vector-icons";
 import { API_BASE_URL } from "../constants/api";
 
@@ -24,6 +25,7 @@ type Canteen = {
 export default function HomeScreen() {
   const params = useLocalSearchParams<{ fullName?: string }>();
   const fullName = params.fullName || "User";
+  const router = useRouter();
 
   const [canteens, setCanteens] = useState<Canteen[]>([]);
 
@@ -43,7 +45,6 @@ export default function HomeScreen() {
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      {/* Header */}
       <View style={styles.header}>
         <Image
           source={require("../assets/images/UniBites.png")}
@@ -52,7 +53,6 @@ export default function HomeScreen() {
         <Ionicons name="notifications-outline" size={24} color="#333" />
       </View>
 
-      {/* Welcome */}
       <Text style={styles.welcomeText}>
         Welcome, {fullName.toUpperCase()}
       </Text>
@@ -60,7 +60,6 @@ export default function HomeScreen() {
         Fuel Your Campus, One Bite at a Time
       </Text>
 
-      {/* Search */}
       <View style={styles.searchBox}>
         <Ionicons name="search" size={20} color="#888" />
         <TextInput
@@ -70,41 +69,48 @@ export default function HomeScreen() {
         <Ionicons name="mic-outline" size={20} color="#888" />
       </View>
 
-      {/* Banner */}
       <View style={styles.banner}>
         <Text style={styles.bannerText}>
           Enjoy Best Khana set{"\n"}at Islington Canteen
         </Text>
       </View>
 
-      {/* All Canteens */}
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>All Canteens</Text>
       </View>
 
       {canteens.map((canteen) => (
-        <View key={canteen.id} style={styles.canteenCard}>
-          <View>
-            <Text style={styles.canteenName}>{canteen.name}</Text>
-            <Text style={styles.canteenSub}>{canteen.location}</Text>
-            <Text style={styles.canteenTime}>
-              {canteen.opening_time} - {canteen.closing_time}
-            </Text>
-          </View>
+        <TouchableOpacity
+          key={canteen.id}
+          activeOpacity={0.9}
+          onPress={() => router.push({
+            pathname: "/menu/[canteenId]",
+            params: { canteenId: canteen.id, canteenName: canteen.name }
+          })}
+        >
+          <View style={styles.canteenCard}>
+            <View>
+              <Text style={styles.canteenName}>{canteen.name}</Text>
+              <Text style={styles.canteenSub}>{canteen.location}</Text>
+              <Text style={styles.canteenTime}>
+                {canteen.opening_time} - {canteen.closing_time}
+              </Text>
+            </View>
 
-        <View style={styles.rightInfo}>
-          <View style={styles.ratingRow}>
-            <FontAwesome name="star" size={14} color="#F5A623" />
-            <Text style={styles.ratingText}>{canteen.rating}</Text>
-          </View>
+            <View style={styles.rightInfo}>
+              <View style={styles.ratingRow}>
+                <FontAwesome name="star" size={14} color="#F5A623" />
+                <Text style={styles.ratingText}>{canteen.rating}</Text>
+              </View>
 
-          <View style={styles.itemBadge}>
-            <Text style={styles.itemText}>
-              {canteen.total_items} items
-            </Text>
+              <View style={styles.itemBadge}>
+                <Text style={styles.itemText}>
+                  {canteen.total_items} items
+                </Text>
+              </View>
+            </View>
           </View>
-        </View>
-        </View>
+        </TouchableOpacity>
       ))}
 
       <View style={{ height: 40 }} />

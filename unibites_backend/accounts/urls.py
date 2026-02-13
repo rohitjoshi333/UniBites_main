@@ -7,6 +7,7 @@ from .views import (
     ResetPasswordView,
     ResendOtpView,
     CanteenListView,
+    VendorCanteenView,
 )
 
 urlpatterns = [
@@ -17,4 +18,6 @@ urlpatterns = [
     path("forgot-password/", ForgotPasswordView.as_view()),
     path("reset-password/", ResetPasswordView.as_view()),
     path("canteens/", CanteenListView.as_view()),
+    path("vendor/canteen/", VendorCanteenView.as_view()),
 ]
+

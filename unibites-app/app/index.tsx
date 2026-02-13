@@ -11,51 +11,65 @@ import {
 import { Link, router } from "expo-router";
 import { API_BASE_URL } from "../constants/api";
 
+import * as SecureStore from 'expo-secure-store';
+
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-const handleLogin = async () => {
-  if (!email || !password) {
-    Alert.alert("Error", "Please enter email and password.");
-    return;
-  }
-
-  try {
-    const response = await fetch(`${API_BASE_URL}/api/auth/login/`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        email,
-        password,
-      }),
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      Alert.alert("Login failed", data.detail || "Invalid credentials");
+  const handleLogin = async () => {
+    if (!email || !password) {
+      Alert.alert("Error", "Please enter email and password.");
       return;
     }
 
-    // Backend bata full name ley mero vai
-    const fullName =
-      data.full_name ||
-      data.user?.full_name ||
-      "User";
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/login/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email,
+          password,
+        }),
+      });
 
-    // Hard code garnu hudaina - Dynamic data pathaune
-    router.replace({
-      pathname: "/home",
-      params: { fullName },
-    });
+      const data = await response.json();
 
-  } catch (error) {
-    Alert.alert("Error", "Network error. Check backend connection.");
-  }
-};
+      if (!response.ok) {
+        Alert.alert(
+          "Login failed",
+          data.detail || data.non_field_errors?.[0] || "Invalid credentials"
+        );
+        return;
+      }
+
+      // Save tokens securely
+      if (data.access) {
+        await SecureStore.setItemAsync("accessToken", data.access);
+      }
+      if (data.refresh) {
+        await SecureStore.setItemAsync("refreshToken", data.refresh);
+      }
+
+      // Backend bata full name ley mero vai
+      const fullName =
+        data.full_name ||
+        data.user?.full_name ||
+        "User";
+
+      // Hard code garnu hudaina - Dynamic data pathaune
+      router.replace({
+        pathname: "/home",
+        params: { fullName },
+      });
+
+    } catch (error) {
+      console.error(error);
+      Alert.alert("Error", "Network error. Check backend connection.");
+    }
+  };
 
 
   return (

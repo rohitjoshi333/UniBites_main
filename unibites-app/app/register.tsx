@@ -1,4 +1,3 @@
-// app/register.tsx
 import React, { useState } from "react";
 import {
   View,
@@ -91,13 +90,11 @@ export default function RegisterScreen() {
 
   return (
     <View style={styles.screen}>
-      {/* App logo */}
       <Image
         source={require("../assets/images/UniBites.png")}
         style={styles.logo}
       />
 
-      {/* Main card */}
       <View style={styles.card}>
         <Text style={styles.heading}>Create a new account</Text>
 
@@ -117,7 +114,6 @@ export default function RegisterScreen() {
           keyboardType="email-address"
         />
 
-        {/* Phone with Nepali country code */}
         <View style={styles.phoneContainer}>
           <Text style={styles.countryCode}>+977</Text>
           <TextInput
@@ -146,7 +142,6 @@ export default function RegisterScreen() {
           onChangeText={setConfirmPassword}
         />
 
-        {/* Image + actions */}
         <View style={styles.imageWrapper}>
           <Image
             source={require("../assets/images/Coffee_station.png")}
@@ -168,7 +163,6 @@ export default function RegisterScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Terms */}
         <Text style={styles.footer}>
           By continuing, you agree to our Terms & Privacy Policy
         </Text>

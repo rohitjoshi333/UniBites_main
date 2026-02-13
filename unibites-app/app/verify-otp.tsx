@@ -25,7 +25,7 @@ export default function VerifyOtpScreen() {
 
     try {
       setLoading(true);
-      const response = await fetch(`${API_BASE_URL}/api/auth/resend-otp/`, {
+      const response = await fetch(`${API_BASE_URL}/api/auth/verify-otp/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -37,7 +37,7 @@ export default function VerifyOtpScreen() {
       const data = await response.json();
 
       if (!response.ok) {
-        Alert.alert("Error", data.non_field_errors?.[0] || data.detail || "Invalid OTP");
+        Alert.alert("Error", data.detail || "Invalid OTP");
         return;
       }
 
@@ -49,7 +49,6 @@ export default function VerifyOtpScreen() {
       setLoading(false);
     }
   };
-
   // RESEND OTP
   const handleResendOtp = async () => {
     try {
