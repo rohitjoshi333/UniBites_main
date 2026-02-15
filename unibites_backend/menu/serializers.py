@@ -4,7 +4,7 @@ from .models import MenuItem
 class MenuItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = MenuItem
-        fields = ['id', 'canteen', 'name', 'description', 'price', 'image', 'is_available', 'created_at']
+        fields = ['id', 'canteen', 'name', 'description', 'price', 'is_available', 'created_at']
         read_only_fields = ['id', 'created_at', 'canteen']
 
     def create(self, validated_data):

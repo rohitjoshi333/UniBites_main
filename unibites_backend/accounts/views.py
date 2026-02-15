@@ -7,7 +7,11 @@ from .serializers import (
     VerifyOtpSerializer,
     LoginSerializer,
     ForgotPasswordSerializer,
+    ForgotPasswordSerializer,
     ResetPasswordSerializer,
+    ProfileSerializer,
+    ProfileUpdateSerializer,
+    ChangePasswordSerializer,
 )
 from .models import User, Canteen
 from django.utils import timezone
@@ -169,3 +173,48 @@ class VendorCanteenView(APIView):
         
         serializer = CanteenSerializer(canteen)
         return Response(serializer.data)
+
+
+class ProfileView(APIView):
+    """
+    GET /api/profile/
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        serializer = ProfileSerializer(request.user)
+        return Response(serializer.data)
+
+
+class UpdateProfileView(APIView):
+    """
+    PATCH /api/profile/update/
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def patch(self, request):
+        serializer = ProfileUpdateSerializer(request.user, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ChangePasswordView(APIView):
+    """
+    POST /api/profile/change-password/
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        serializer = ChangePasswordSerializer(data=request.data)
+        if serializer.is_valid():
+            user = request.user
+            if not user.check_password(serializer.validated_data["old_password"]):
+                return Response({"old_password": ["Wrong password."]}, status=status.HTTP_400_BAD_REQUEST)
+            
+            user.set_password(serializer.validated_data["new_password"])
+            user.save()
+            return Response({"message": "Password changed successfully."})
+            
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

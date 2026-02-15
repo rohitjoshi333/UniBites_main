@@ -20,7 +20,7 @@ type MenuItem = {
     name: string;
     description: string;
     price: string;
-    image: string | null;
+    // image: string | null;
     is_available: boolean;
 };
 
@@ -202,11 +202,7 @@ export default function MenuScreen() {
                                             </View>
                                             <View style={styles.imageContainer}>
                                                 <Image
-                                                    source={
-                                                        item.image
-                                                            ? { uri: item.image }
-                                                            : require("../../assets/images/UniBites.png")
-                                                    }
+                                                    source={require("../../assets/images/UniBites.png")}
                                                     style={styles.itemImage}
                                                 />
                                                 <View style={styles.actionContainer}>

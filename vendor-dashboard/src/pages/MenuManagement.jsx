@@ -29,7 +29,7 @@ const MenuManagement = () => {
             setLoading(false);
         }
     };
-
+    
     useEffect(() => {
         fetchItems();
     }, []);

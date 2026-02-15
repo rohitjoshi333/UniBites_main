@@ -170,3 +170,58 @@ class CanteenSerializer(serializers.ModelSerializer):
             "total_items",
         ]
         
+class ProfileSerializer(serializers.ModelSerializer):
+    role = serializers.CharField(source='get_role_display')
+
+    class Meta:
+        model = User
+        fields = [
+            "id",
+            "full_name",
+            "email",
+            "phone",
+            "role",
+            "is_email_verified",
+            "date_joined",
+        ]
+        read_only_fields = fields
+
+
+class ProfileUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ["full_name", "phone"]
+
+    def validate_phone(self, value):
+        if not value:
+            return value
+            
+        if not value.isdigit():
+            raise serializers.ValidationError("Phone number must contain only digits.")
+        
+        if len(value) != 10:
+            raise serializers.ValidationError("Phone number must be 10 digits long.")
+        
+        if not value.startswith("98") and not value.startswith("97"):
+            raise serializers.ValidationError("Enter a valid phone number (starting with 98 or 97).")
+        return value
+    
+    def validate_full_name(self, value):
+        if not value.strip():
+            raise serializers.ValidationError("Full Name cannot be empty.")
+        return value
+
+
+class ChangePasswordSerializer(serializers.Serializer):
+    old_password = serializers.CharField(required=True)
+    new_password = serializers.CharField(required=True, min_length=8)
+    confirm_password = serializers.CharField(required=True, min_length=8)
+
+    def validate(self, data):
+        if data["new_password"] != data["confirm_password"]:
+            raise serializers.ValidationError("Passwords do not match.")
+        
+        if data["old_password"] == data["new_password"]:
+            raise serializers.ValidationError("New password cannot be the same as the old password.")
+            
+        return data
