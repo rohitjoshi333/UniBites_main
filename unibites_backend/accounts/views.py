@@ -17,6 +17,10 @@ from .models import User, Canteen
 from django.utils import timezone
 from datetime import timedelta
 import random
+import cloudinary.uploader
+from rest_framework import permissions
+from rest_framework.parsers import MultiPartParser, FormParser
+
 
 class RegisterView(APIView):
     """
@@ -158,7 +162,6 @@ class CanteenListView(APIView):
         serializer = CanteenSerializer(canteens, many=True)
         return Response(serializer.data)
 
-from rest_framework import permissions
 class VendorCanteenView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -218,3 +221,70 @@ class ChangePasswordView(APIView):
             return Response({"message": "Password changed successfully."})
             
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class UploadProfileImageView(APIView):
+    """
+    POST /api/profile/upload-image/
+    Accepts multipart/form-data with 'image' file.
+    Uploads to Cloudinary and saves the secure URL on the user's profile.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def post(self, request):
+        image_file = request.FILES.get('image')
+        if not image_file:
+            return Response({"error": "No image file provided."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            result = cloudinary.uploader.upload(
+                image_file,
+                folder="unibites/profiles",
+                public_id=f"user_{request.user.id}",
+                overwrite=True,
+                resource_type="image",
+            )
+            secure_url = result.get("secure_url")
+            request.user.profile_image = secure_url
+            request.user.save(update_fields=["profile_image"])
+            return Response({"profile_image": secure_url}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"error": f"Upload failed: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class UploadCanteenImageView(APIView):
+    """
+    POST /api/vendor/canteen/upload-image/
+    Vendor-only. Uploads canteen image to Cloudinary and saves the URL.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def post(self, request):
+        user = request.user
+        if user.role != "VENDOR":
+            return Response({"error": "Only vendors can upload canteen images."}, status=status.HTTP_403_FORBIDDEN)
+
+        canteen = Canteen.objects.filter(vendor=user).first()
+        if not canteen:
+            return Response({"error": "No canteen assigned to this vendor."}, status=status.HTTP_404_NOT_FOUND)
+
+        image_file = request.FILES.get('image')
+        if not image_file:
+            return Response({"error": "No image file provided."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            result = cloudinary.uploader.upload(
+                image_file,
+                folder="unibites/canteens",
+                public_id=f"canteen_{canteen.id}",
+                overwrite=True,
+                resource_type="image",
+            )
+            secure_url = result.get("secure_url")
+            canteen.image_url = secure_url
+            canteen.save(update_fields=["image_url"])
+            return Response({"image_url": secure_url}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"error": f"Upload failed: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

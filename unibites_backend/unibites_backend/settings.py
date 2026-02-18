@@ -34,7 +34,8 @@ INSTALLED_APPS = [
     "menu",
     "rest_framework",
     "corsheaders",
-    "orders"
+    "orders",
+    "cloudinary",
 ]
 
 MIDDLEWARE = [
@@ -149,11 +150,11 @@ AUTH_USER_MODEL = 'accounts.User'
 CORS_ALLOW_ALL_ORIGINS = True
 
 import os
-CLOUDINARY_STORAGE = {
-    'CLOUD_NAME': os.environ.get('CLOUDINARY_CLOUD_NAME', 'your_cloud_name'),
-    'API_KEY': os.environ.get('CLOUDINARY_API_KEY', 'your_api_key'),
-    'API_SECRET': os.environ.get('CLOUDINARY_API_SECRET', 'your_api_secret'),
-}
+import cloudinary
 
-DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
-MEDIA_URL = '/media/'
+cloudinary.config(
+    cloud_name='dpms02eim',
+    api_key='395418468221677',
+    api_secret='itvn3iU3QKfGiTilJjFU9qHqIBw',
+    secure=True,
+)

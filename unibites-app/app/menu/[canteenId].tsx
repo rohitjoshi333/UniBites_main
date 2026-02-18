@@ -20,7 +20,7 @@ type MenuItem = {
     name: string;
     description: string;
     price: string;
-    // image: string | null;
+    image_url: string | null;
     is_available: boolean;
 };
 
@@ -33,7 +33,7 @@ type CartItem = {
 };
 
 export default function MenuScreen() {
-    const { canteenId, canteenName } = useLocalSearchParams<{ canteenId: string; canteenName: string }>();
+    const { canteenId, canteenName, canteenImage } = useLocalSearchParams<{ canteenId: string; canteenName: string; canteenImage?: string }>();
     const [items, setItems] = useState<MenuItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -164,18 +164,15 @@ export default function MenuScreen() {
                 >
                     <View style={styles.bannerContainer}>
                         <Image
-                            source={require("../../assets/images/Coffee_station.png")}
+                            source={
+                                canteenImage
+                                    ? { uri: canteenImage }
+                                    : require("../../assets/images/Coffee_station.png")
+                            }
                             style={styles.bannerImage}
                         />
                         <View style={styles.overlay} />
                         <View style={styles.bannerContent}>
-                            <Text style={styles.bannerSubtitle}>Grab Your's</Text>
-                            <View style={styles.logoContainer}>
-                                <Image
-                                    source={require("../../assets/images/UniBites.png")}
-                                    style={styles.canteenLogo}
-                                />
-                            </View>
                             <Text style={styles.bannerTitle}>{canteenName || "Canteen"}</Text>
                         </View>
                         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
@@ -202,7 +199,11 @@ export default function MenuScreen() {
                                             </View>
                                             <View style={styles.imageContainer}>
                                                 <Image
-                                                    source={require("../../assets/images/UniBites.png")}
+                                                    source={
+                                                        item.image_url
+                                                            ? { uri: item.image_url }
+                                                            : require("../../assets/images/UniBites.png")
+                                                    }
                                                     style={styles.itemImage}
                                                 />
                                                 <View style={styles.actionContainer}>
@@ -291,9 +292,9 @@ const styles = StyleSheet.create({
         left: 0,
         right: 0,
         bottom: 0,
-        justifyContent: 'center',
+        justifyContent: 'flex-end',
         alignItems: 'center',
-        paddingTop: 40,
+        paddingBottom: 20,
     },
     bannerSubtitle: {
         color: 'white',

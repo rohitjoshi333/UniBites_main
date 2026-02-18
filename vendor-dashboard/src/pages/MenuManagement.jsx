@@ -29,7 +29,7 @@ const MenuManagement = () => {
             setLoading(false);
         }
     };
-    
+
     useEffect(() => {
         fetchItems();
     }, []);
@@ -44,7 +44,7 @@ const MenuManagement = () => {
                 is_available: item.is_available,
                 image: null
             });
-            setImagePreview(item.image);
+            setImagePreview(item.image_url);
         } else {
             setCurrentItem(null);
             setFormData({
@@ -122,13 +122,17 @@ const MenuManagement = () => {
     };
 
     return (
-        <div>
-            <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h1 className="page-title">Menu Management</h1>
+        <div className="menu-page">
+            <header className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                    <h1 className="page-title">Menu Management</h1>
+                    <p className="login-subtitle">Control your available dishes and pricing</p>
+                </div>
                 <button className="btn btn-primary" onClick={() => handleOpenModal()}>
-                    <Plus size={20} /> Add Item
+                    <Plus size={20} />
+                    <span>Add New Item</span>
                 </button>
-            </div>
+            </header>
 
             {loading ? (
                 <div className="loading-spinner"></div>
@@ -137,30 +141,30 @@ const MenuManagement = () => {
                     {items.map(item => (
                         <div key={item.id} className="menu-item-card">
                             <img
-                                src={item.image || 'https://via.placeholder.com/300x200?text=No+Image'}
+                                src={item.image_url || 'https://via.placeholder.com/300x200?text=No+Image'}
                                 alt={item.name}
                                 className="menu-image"
                             />
                             <div className="menu-details">
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
                                     <h3 className="menu-name">{item.name}</h3>
                                     <span className="menu-price">Rs. {item.price}</span>
                                 </div>
-                                <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', margin: '0.5rem 0', height: '40px', overflow: 'hidden' }}>
+                                <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', margin: '0 0 1rem', display: '-webkit-box', WebkitLineClamp: '2', WebkitBoxOrient: 'vertical', overflow: 'hidden', minHeight: '40px' }}>
                                     {item.description}
                                 </p>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem' }}>
-                                    <span className={`badge ${item.is_available ? 'badge-success' : 'badge-gray'}`}>
-                                        {item.is_available ? 'Available' : 'Unavailable'}
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <span className={`badge ${item.is_available ? 'badge-success' : 'badge-gray'}`} style={{ backgroundColor: item.is_available ? '#dcfce7' : '#f1f5f9', color: item.is_available ? '#166534' : '#64748b' }}>
+                                        {item.is_available ? 'Available' : 'Hidden'}
                                     </span>
-                                </div>
-                                <div className="menu-actions">
-                                    <button className="btn btn-secondary" onClick={() => handleOpenModal(item)} style={{ padding: '0.4rem' }}>
-                                        <Edit2 size={16} />
-                                    </button>
-                                    <button className="btn btn-danger" onClick={() => handleDelete(item.id)} style={{ padding: '0.4rem' }}>
-                                        <Trash2 size={16} />
-                                    </button>
+                                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                        <button className="btn btn-secondary" onClick={() => handleOpenModal(item)} style={{ padding: '0.5rem' }}>
+                                            <Edit2 size={16} />
+                                        </button>
+                                        <button className="btn btn-danger" onClick={() => handleDelete(item.id)} style={{ padding: '0.5rem' }}>
+                                            <Trash2 size={16} />
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -172,71 +176,81 @@ const MenuManagement = () => {
                 <div className="modal-overlay">
                     <div className="modal">
                         <div className="modal-header">
-                            <span>{currentItem ? 'Edit Item' : 'Add New Item'}</span>
-                            <button onClick={handleCloseModal} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
+                            <h2 style={{ fontSize: '1.5rem', fontWeight: '800' }}>{currentItem ? 'Update Item' : 'New Dish'}</h2>
+                            <button onClick={handleCloseModal} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' }}>
                                 <X size={24} />
                             </button>
                         </div>
-                        <form onSubmit={handleSubmit}>
+                        <form onSubmit={handleSubmit} style={{ marginTop: '1.5rem' }}>
                             <div className="form-group">
-                                <label className="form-label">Item Name</label>
+                                <label className="form-label">Dish Name</label>
                                 <input
                                     type="text"
                                     name="name"
                                     className="form-input"
+                                    placeholder="e.g. Special Chicken Curry"
                                     value={formData.name}
                                     onChange={handleInputChange}
                                     required
                                 />
                             </div>
-                            <div className="form-group">
-                                <label className="form-label">Price (Rs.)</label>
-                                <input
-                                    type="number"
-                                    name="price"
-                                    className="form-input"
-                                    step="0.01"
-                                    value={formData.price}
-                                    onChange={handleInputChange}
-                                    required
-                                />
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                                <div className="form-group" style={{ marginBottom: 0 }}>
+                                    <label className="form-label">Price (Rs.)</label>
+                                    <input
+                                        type="number"
+                                        name="price"
+                                        className="form-input"
+                                        placeholder="0.00"
+                                        step="0.01"
+                                        value={formData.price}
+                                        onChange={handleInputChange}
+                                        required
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label className="form-label">Status</label>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '0.5rem' }}>
+                                        <input
+                                            type="checkbox"
+                                            name="is_available"
+                                            id="is_available"
+                                            checked={formData.is_available}
+                                            onChange={handleInputChange}
+                                            style={{ width: '1.25rem', height: '1.25rem', cursor: 'pointer' }}
+                                        />
+                                        <label htmlFor="is_available" style={{ marginBottom: 0, fontWeight: '500', cursor: 'pointer' }}>Available</label>
+                                    </div>
+                                </div>
                             </div>
                             <div className="form-group">
                                 <label className="form-label">Description</label>
                                 <textarea
                                     name="description"
                                     className="form-textarea"
+                                    placeholder="Write a tasty description..."
                                     rows="3"
                                     value={formData.description}
                                     onChange={handleInputChange}
                                 />
                             </div>
                             <div className="form-group">
-                                <label className="form-label">Image</label>
+                                <label className="form-label">Food Photo</label>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                    <label className="btn btn-secondary" style={{ cursor: 'pointer' }}>
-                                        <Upload size={16} /> Upload
+                                    <label className="btn btn-secondary" style={{ cursor: 'pointer', flex: 1, justifyContent: 'center' }}>
+                                        <Upload size={16} /> {imagePreview ? 'Change Photo' : 'Upload Photo'}
                                         <input type="file" hidden onChange={handleImageChange} accept="image/*" />
                                     </label>
                                     {imagePreview && (
-                                        <img src={imagePreview} alt="Preview" style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '4px' }} />
+                                        <img src={imagePreview} alt="Preview" style={{ width: '48px', height: '48px', objectFit: 'cover', borderRadius: '0.75rem', border: '1px solid var(--border-color)' }} />
                                     )}
                                 </div>
                             </div>
-                            <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                <input
-                                    type="checkbox"
-                                    name="is_available"
-                                    id="is_available"
-                                    checked={formData.is_available}
-                                    onChange={handleInputChange}
-                                    style={{ width: '1.25rem', height: '1.25rem' }}
-                                />
-                                <label htmlFor="is_available" style={{ marginBottom: 0 }}>Available for ordering</label>
-                            </div>
-                            <div className="modal-footer">
-                                <button type="button" className="btn btn-secondary" onClick={handleCloseModal}>Cancel</button>
-                                <button type="submit" className="btn btn-primary">Save Item</button>
+                            <div className="modal-footer" style={{ borderTop: '1px solid var(--border-color)', paddingTop: '1.75rem', marginTop: '2.25rem', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+                                <button type="button" className="btn btn-secondary" onClick={handleCloseModal} style={{ paddingLeft: '1.5rem', paddingRight: '1.5rem' }}>Cancel</button>
+                                <button type="submit" className="btn btn-primary" style={{ paddingLeft: '2.25rem', paddingRight: '2.25rem' }}>
+                                    {currentItem ? 'Save Changes' : 'Add to Menu'}
+                                </button>
                             </div>
                         </form>
                     </div>

@@ -168,6 +168,7 @@ class CanteenSerializer(serializers.ModelSerializer):
             "closing_time",
             "rating",
             "total_items",
+            "image_url",
         ]
         
 class ProfileSerializer(serializers.ModelSerializer):
@@ -183,6 +184,7 @@ class ProfileSerializer(serializers.ModelSerializer):
             "role",
             "is_email_verified",
             "date_joined",
+            "profile_image",
         ]
         read_only_fields = fields
 

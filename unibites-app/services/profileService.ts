@@ -28,3 +28,35 @@ export const changePassword = async (data: any) => {
     const response = await api.post('profile/change-password/', data);
     return response.data;
 };
+
+export const uploadProfileImage = async (imageUri: string): Promise<string> => {
+    const token = await SecureStore.getItemAsync('accessToken');
+
+    const formData = new FormData();
+    const filename = imageUri.split('/').pop() || 'profile.jpg';
+    const match = /\.(\w+)$/.exec(filename);
+    const type = match ? `image/${match[1]}` : 'image/jpeg';
+
+    formData.append('image', {
+        uri: imageUri,
+        name: filename,
+        type,
+    } as any);
+
+    const response = await fetch(`${API_BASE_URL}/api/profile/upload-image/`, {
+        method: 'POST',
+        headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data',
+        },
+        body: formData,
+    });
+
+    if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Upload failed');
+    }
+
+    const data = await response.json();
+    return data.profile_image;
+};

@@ -8,9 +8,10 @@ import {
   ScrollView,
   TouchableOpacity,
 } from "react-native";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import { FontAwesome, Ionicons } from "@expo/vector-icons";
 import { API_BASE_URL } from "../constants/api";
+import * as SecureStore from "expo-secure-store";
 
 type Canteen = {
   id: number;
@@ -20,18 +21,32 @@ type Canteen = {
   closing_time: string;
   rating: number;
   total_items: number;
+  image_url: string | null;
 };
 
 export default function HomeScreen() {
-  const params = useLocalSearchParams<{ fullName?: string }>();
-  const fullName = params.fullName || "User";
   const router = useRouter();
-
+  const [fullName, setFullName] = useState("User");
   const [canteens, setCanteens] = useState<Canteen[]>([]);
 
   useEffect(() => {
     fetchCanteens();
+    fetchUserName();
   }, []);
+
+  const fetchUserName = async () => {
+    try {
+      const token = await SecureStore.getItemAsync("accessToken");
+      if (!token) return;
+      const res = await fetch(`${API_BASE_URL}/api/profile/`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (data.full_name) setFullName(data.full_name);
+    } catch (error) {
+      console.log("Failed to fetch user name", error);
+    }
+  };
 
   const fetchCanteens = async () => {
     try {
@@ -70,6 +85,11 @@ export default function HomeScreen() {
       </View>
 
       <View style={styles.banner}>
+        <Image
+          source={require("../assets/images/islingtoncanteen.jpg")}
+          style={styles.bannerImage}
+        />
+        <View style={styles.bannerOverlay} />
         <Text style={styles.bannerText}>
           Enjoy Best Khana set{"\n"}at Islington Canteen
         </Text>
@@ -85,11 +105,23 @@ export default function HomeScreen() {
           activeOpacity={0.9}
           onPress={() => router.push({
             pathname: "/menu/[canteenId]",
-            params: { canteenId: canteen.id, canteenName: canteen.name }
+            params: {
+              canteenId: canteen.id,
+              canteenName: canteen.name,
+              canteenImage: canteen.image_url || '',
+            }
           })}
         >
           <View style={styles.canteenCard}>
-            <View>
+            <Image
+              source={
+                canteen.image_url
+                  ? { uri: canteen.image_url }
+                  : require("../assets/images/UniBites.png")
+              }
+              style={styles.canteenThumb}
+            />
+            <View style={styles.canteenInfo}>
               <Text style={styles.canteenName}>{canteen.name}</Text>
               <Text style={styles.canteenSub}>{canteen.location}</Text>
               <Text style={styles.canteenTime}>
@@ -129,7 +161,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginTop: 12,
+    marginTop: 50,
   },
 
   logo: {
@@ -170,18 +202,29 @@ const styles = StyleSheet.create({
   },
 
   banner: {
-    height: 140,
-    backgroundColor: "#111827",
+    height: 160,
     borderRadius: 16,
     marginTop: 20,
-    padding: 16,
+    overflow: "hidden",
     justifyContent: "flex-end",
+  },
+
+  bannerImage: {
+    ...StyleSheet.absoluteFillObject,
+    width: "100%",
+    height: "100%",
+  },
+
+  bannerOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0,0,0,0.55)",
   },
 
   bannerText: {
     color: "#fff",
     fontSize: 16,
     fontWeight: "600",
+    padding: 16,
   },
 
   sectionHeader: {
@@ -199,11 +242,23 @@ const styles = StyleSheet.create({
 
   canteenCard: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    alignItems: "center",
     backgroundColor: "#F9FAFB",
-    padding: 16,
+    padding: 12,
     borderRadius: 12,
     marginTop: 12,
+  },
+
+  canteenThumb: {
+    width: 56,
+    height: 56,
+    borderRadius: 12,
+    backgroundColor: "#E5E7EB",
+    marginRight: 12,
+  },
+
+  canteenInfo: {
+    flex: 1,
   },
 
   canteenName: {
@@ -248,3 +303,4 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
 });
+

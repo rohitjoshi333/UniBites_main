@@ -24,16 +24,23 @@ const Login = () => {
     };
 
     return (
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: '#f3f4f6' }}>
-            <div className="card" style={{ width: '100%', maxWidth: '400px' }}>
-                <h2 style={{ textAlign: 'center', marginBottom: '1.5rem', fontSize: '1.5rem', fontWeight: 'bold' }}>Vendor Login</h2>
-                {error && <div style={{ color: '#ef4444', marginBottom: '1rem', textAlign: 'center' }}>{error}</div>}
-                <form onSubmit={handleSubmit}>
+        <div className="login-page">
+            <div className="login-card">
+                <div className="login-header">
+                    <img src="/logo.png" alt="UniBites Logo" className="login-logo" />
+                    <h2 className="login-title">Vendor Portal</h2>
+                    <p className="login-subtitle">Manage your canteen with ease</p>
+                </div>
+
+                {error && <div className="login-error">{error}</div>}
+
+                <form onSubmit={handleSubmit} className="login-form">
                     <div className="form-group">
-                        <label className="form-label">Email</label>
+                        <label className="form-label">Email Address</label>
                         <input
                             type="email"
                             className="form-input"
+                            placeholder="vendor@unibites.com"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             required
@@ -44,14 +51,18 @@ const Login = () => {
                         <input
                             type="password"
                             className="form-input"
+                            placeholder="••••••••"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             required
                         />
                     </div>
-                    <button type="submit" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }}>
-                        Login
+                    <button type="submit" className="login-btn">
+                        Sign In
                     </button>
+                    <div className="login-footer">
+                        <p>Need help? Contact Admin</p>
+                    </div>
                 </form>
             </div>
         </div>

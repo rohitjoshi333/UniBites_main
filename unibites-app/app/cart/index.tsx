@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { getCart, updateCartItem, removeCartItem } from '../../services/cartService';
 
 const CartScreen = () => {
+    // ... (rest of logic stays same)
     const router = useRouter();
     const [cart, setCart] = useState<any>(null);
     const [loading, setLoading] = useState(true);
@@ -106,19 +107,16 @@ const CartScreen = () => {
     if (loading) {
         return (
             <View style={styles.center}>
-                <ActivityIndicator size="large" color="#1a237e" />
+                <ActivityIndicator size="large" color="#E85D3A" />
             </View>
         );
     }
 
-    // Header Component for FlatList
     const renderHeader = () => (
         <>
             <View style={styles.headerContainer}>
-                <View style={styles.headerContent}>
-                    <Text style={styles.headerTitle}>My Cart</Text>
-                    <Text style={styles.headerSubtitle}>Review your items</Text>
-                </View>
+                <Text style={styles.headerTitle}>My Cart</Text>
+                <Text style={styles.headerSubtitle}>Review your items before checkout</Text>
             </View>
 
             {cart && cart.items && cart.items.length > 0 && (
@@ -126,7 +124,7 @@ const CartScreen = () => {
                     <View style={styles.summaryRow}>
                         <View style={styles.summaryItem}>
                             <Text style={styles.summaryValue}>{cart.items.length}</Text>
-                            <Text style={styles.summaryLabel}>items</Text>
+                            <Text style={styles.summaryLabel}>Items</Text>
                         </View>
                         <View style={styles.summaryDivider} />
                         <View style={styles.summaryItem}>
@@ -135,7 +133,7 @@ const CartScreen = () => {
                         </View>
                         <View style={styles.summaryDivider} />
                         <View style={styles.summaryItem}>
-                            <Text style={styles.summaryValue}>Rs. {cart.total_price}</Text>
+                            <Text style={[styles.summaryValue, { fontSize: 18 }]}>Rs. {cart.total_price}</Text>
                             <Text style={styles.summaryLabel}>Total</Text>
                         </View>
                     </View>
@@ -144,7 +142,7 @@ const CartScreen = () => {
 
             {cart && cart.items && cart.items.length > 0 && (
                 <TouchableOpacity style={styles.clearButton} onPress={handleClearCart}>
-                    <Ionicons name="trash-outline" size={20} color="white" style={{ marginRight: 8 }} />
+                    <Ionicons name="trash-outline" size={18} color="#E85D3A" style={{ marginRight: 6 }} />
                     <Text style={styles.clearButtonText}>Clear All Items</Text>
                 </TouchableOpacity>
             )}
@@ -153,33 +151,33 @@ const CartScreen = () => {
 
     const renderItem = ({ item }: { item: any }) => (
         <View style={styles.card}>
-            <Image source={{ uri: item.menu_item.image || 'https://via.placeholder.com/100' }} style={styles.image} />
+            <Image source={{ uri: item.menu_item.image_url || 'https://via.placeholder.com/100' }} style={styles.image} />
             <View style={styles.details}>
                 <View style={styles.titleRow}>
                     <Text style={styles.name}>{item.menu_item.name}</Text>
                     <TouchableOpacity onPress={() => handleRemoveItem(item.id)}>
-                        <Ionicons name="trash-outline" size={20} color="#FF4545" />
+                        <Ionicons name="trash-outline" size={20} color="#FF5252" />
                     </TouchableOpacity>
                 </View>
-                <Text style={styles.desc} numberOfLines={1}>{item.menu_item.description || " Delicious item"}</Text>
-                <Text style={styles.price}>NPR. {item.menu_item.price}</Text>
+                <Text style={styles.desc} numberOfLines={1}>{item.menu_item.description || "Delicious item"}</Text>
+                <Text style={styles.price}>Rs. {item.menu_item.price}</Text>
 
                 <View style={styles.controlsRow}>
                     <View style={styles.controls}>
                         <TouchableOpacity
                             disabled={updating}
                             onPress={() => handleUpdateQuantity(item.id, item.quantity - 1)}
+                            style={styles.controlBtn}
                         >
-                            <Ionicons name="remove-circle-outline" size={28} color="#1a237e" />
+                            <Ionicons name="remove" size={18} color="#E85D3A" />
                         </TouchableOpacity>
-                        <View style={styles.qtyBadge}>
-                            <Text style={styles.quantity}>{item.quantity}</Text>
-                        </View>
+                        <Text style={styles.quantity}>{item.quantity}</Text>
                         <TouchableOpacity
                             disabled={updating}
                             onPress={() => handleUpdateQuantity(item.id, item.quantity + 1)}
+                            style={styles.controlBtn}
                         >
-                            <Ionicons name="add-circle-outline" size={28} color="#1a237e" />
+                            <Ionicons name="add" size={18} color="#E85D3A" />
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -200,7 +198,7 @@ const CartScreen = () => {
                 ListHeaderComponent={renderHeader}
                 ListEmptyComponent={
                     <View style={styles.emptyState}>
-                        <Ionicons name="cart-outline" size={64} color="#ccc" />
+                        <Ionicons name="cart-outline" size={64} color="#ddd" />
                         <Text style={styles.emptyText}>Your cart is empty</Text>
                         <TouchableOpacity style={styles.browseButton} onPress={() => router.push('/home')}>
                             <Text style={styles.browseButtonText}>Browse Menu</Text>
@@ -212,12 +210,12 @@ const CartScreen = () => {
             {cart && cart.items && cart.items.length > 0 && (
                 <View style={styles.footer}>
                     <View style={styles.footerRow}>
-                        <Text style={styles.footerLabel}>Total Amount</Text>
-                        <Text style={styles.footerValue}>NPR. {calculateTotal()}</Text>
+                        <Text style={styles.footerLabel}>Total Bill</Text>
+                        <Text style={styles.footerValue}>Rs. {calculateTotal()}</Text>
                     </View>
                     <TouchableOpacity style={styles.checkoutBtn} onPress={() => Alert.alert("Checkout", "Checkout flow coming soon!")}>
-                        <Ionicons name="checkmark-circle-outline" size={24} color="white" style={{ marginRight: 8 }} />
-                        <Text style={styles.checkoutText}>Proceed to checkout</Text>
+                        <Text style={styles.checkoutText}>Checkout Now</Text>
+                        <Ionicons name="chevron-forward" size={20} color="white" style={{ marginLeft: 8 }} />
                     </TouchableOpacity>
                 </View>
             )}
@@ -228,36 +226,34 @@ const CartScreen = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#F8F9FA',
+        backgroundColor: '#F3F4F6',
     },
     center: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: '#F8F9FA',
+        backgroundColor: '#F3F4F6',
     },
     headerContainer: {
-        backgroundColor: '#1a237e',
-        paddingTop: 60,
-        paddingBottom: 80,
-        paddingHorizontal: 20,
-        marginBottom: -50,
-    },
-    headerContent: {
-        flexDirection: 'column',
+        paddingTop: 70,
+        paddingBottom: 30,
+        paddingHorizontal: 24,
+        backgroundColor: '#1E293B',
+        borderBottomLeftRadius: 24,
+        borderBottomRightRadius: 24,
     },
     headerTitle: {
         fontSize: 28,
         fontWeight: 'bold',
-        color: '#fff',
+        color: '#FFFFFF',
     },
     headerSubtitle: {
         fontSize: 14,
-        color: '#e0e0e0',
+        color: '#94A3B8',
         marginTop: 4,
     },
     summaryCard: {
-        backgroundColor: '#7986cb',
+        backgroundColor: '#fff',
         marginHorizontal: 20,
         borderRadius: 16,
         padding: 20,
@@ -266,10 +262,11 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.2,
-        shadowRadius: 8,
-        elevation: 5,
-        marginBottom: 20,
+        shadowOpacity: 0.1,
+        shadowRadius: 10,
+        elevation: 4,
+        marginTop: -20,
+        marginBottom: 16,
     },
     summaryRow: {
         flexDirection: 'row',
@@ -282,63 +279,66 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     summaryValue: {
-        fontSize: 24,
+        fontSize: 22,
         fontWeight: 'bold',
-        color: 'white',
+        color: '#1E293B',
     },
     summaryLabel: {
-        fontSize: 12,
-        color: 'white',
+        fontSize: 11,
+        color: '#64748B',
+        marginTop: 2,
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
     },
     summaryDivider: {
         width: 1,
-        height: 40,
-        backgroundColor: 'rgba(255,255,255,0.3)',
+        height: 36,
+        backgroundColor: '#E2E8F0',
     },
     clearButton: {
-        backgroundColor: '#e53935',
         marginHorizontal: 20,
-        marginBottom: 20,
-        paddingVertical: 12,
-        borderRadius: 12,
+        marginBottom: 16,
+        paddingVertical: 10,
+        borderRadius: 10,
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
+        backgroundColor: '#FFF1F2',
+        borderWidth: 1,
+        borderColor: '#FECDD3',
     },
     clearButtonText: {
-        color: 'white',
-        fontWeight: 'bold',
-        fontSize: 16,
+        color: '#E11D48', // More vibrant red
+        fontWeight: '600',
+        fontSize: 14,
     },
     listContent: {
-        paddingBottom: 150,
+        paddingBottom: 160,
     },
     card: {
         backgroundColor: '#fff',
         borderRadius: 16,
-        padding: 12,
+        padding: 14,
         marginHorizontal: 20,
-        marginBottom: 16,
+        marginBottom: 12,
         flexDirection: 'row',
         alignItems: 'center',
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.05,
-        shadowRadius: 4,
+        shadowRadius: 5,
         elevation: 2,
-        borderWidth: 1,
-        borderColor: '#f0f0f0',
     },
     image: {
         width: 80,
         height: 80,
-        borderRadius: 12,
-        backgroundColor: '#eee',
+        borderRadius: 14,
+        backgroundColor: '#F3F4F6',
         resizeMode: 'cover',
     },
     details: {
         flex: 1,
-        marginLeft: 12,
+        marginLeft: 14,
     },
     titleRow: {
         flexDirection: 'row',
@@ -347,42 +347,44 @@ const styles = StyleSheet.create({
     },
     name: {
         fontSize: 16,
-        fontWeight: 'bold',
-        color: '#1a237e',
+        fontWeight: '700',
+        color: '#1E293B',
         flex: 1,
         marginRight: 8,
     },
     desc: {
         fontSize: 12,
-        color: '#9e9e9e',
+        color: '#64748B',
         marginTop: 2,
     },
     price: {
-        fontSize: 14,
-        color: '#7986cb',
-        fontWeight: '600',
+        fontSize: 15,
+        color: '#E85D3A',
+        fontWeight: 'bold',
         marginTop: 4,
     },
     controlsRow: {
         flexDirection: 'row',
         justifyContent: 'flex-end',
-        marginTop: 4,
+        marginTop: 6,
     },
     controls: {
         flexDirection: 'row',
         alignItems: 'center',
+        backgroundColor: '#FFF7F5',
+        borderRadius: 10,
+        borderWidth: 1,
+        borderColor: '#FECACA',
     },
-    qtyBadge: {
-        backgroundColor: '#1a237e',
+    controlBtn: {
         paddingHorizontal: 12,
-        paddingVertical: 4,
-        borderRadius: 12,
-        marginHorizontal: 8,
+        paddingVertical: 6,
     },
     quantity: {
-        fontSize: 14,
+        fontSize: 15,
         fontWeight: 'bold',
-        color: 'white',
+        color: '#1E293B',
+        paddingHorizontal: 8,
     },
     footer: {
         position: 'absolute',
@@ -390,14 +392,15 @@ const styles = StyleSheet.create({
         left: 0,
         right: 0,
         backgroundColor: '#fff',
-        padding: 20,
+        padding: 24,
+        paddingBottom: 40,
         borderTopWidth: 1,
-        borderTopColor: '#eee',
+        borderTopColor: '#E2E8F0',
         shadowColor: '#000',
         shadowOffset: { width: 0, height: -4 },
-        shadowOpacity: 0.05,
-        shadowRadius: 8,
-        elevation: 10,
+        shadowOpacity: 0.1,
+        shadowRadius: 10,
+        elevation: 12,
     },
     footerRow: {
         flexDirection: 'row',
@@ -407,21 +410,25 @@ const styles = StyleSheet.create({
     },
     footerLabel: {
         fontSize: 16,
-        fontWeight: 'bold',
-        color: '#1a237e',
+        color: '#64748B',
     },
     footerValue: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: '#1a237e',
+        fontSize: 24,
+        fontWeight: '800',
+        color: '#1E293B',
     },
     checkoutBtn: {
-        backgroundColor: '#0d47a1',
-        borderRadius: 12,
-        paddingVertical: 16,
+        backgroundColor: '#E85D3A',
+        borderRadius: 14,
+        paddingVertical: 18,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
+        shadowColor: '#E85D3A',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        elevation: 5,
     },
     checkoutText: {
         color: '#fff',
@@ -430,26 +437,27 @@ const styles = StyleSheet.create({
     },
     emptyState: {
         alignItems: 'center',
-        marginTop: 50,
+        marginTop: 80,
         padding: 20,
     },
     emptyText: {
         fontSize: 18,
-        color: '#888',
+        color: '#94A3AF',
         marginTop: 16,
         marginBottom: 24,
     },
     browseButton: {
-        backgroundColor: '#1a237e',
-        paddingHorizontal: 24,
-        paddingVertical: 12,
-        borderRadius: 8,
+        backgroundColor: '#E85D3A',
+        paddingHorizontal: 30,
+        paddingVertical: 15,
+        borderRadius: 12,
     },
     browseButtonText: {
         color: '#fff',
-        fontWeight: '600',
+        fontWeight: 'bold',
         fontSize: 16,
     },
 });
 
 export default CartScreen;
+

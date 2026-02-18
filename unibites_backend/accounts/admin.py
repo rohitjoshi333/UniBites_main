@@ -1,4 +1,6 @@
 from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
+from django.contrib.auth.forms import UserChangeForm, UserCreationForm
 from .models import User, Canteen
 
 
@@ -7,12 +9,25 @@ class CanteenInline(admin.StackedInline):
     can_delete = False
     verbose_name_plural = 'Canteen (Assign Vendor to Canteen)'
     fk_name = 'vendor'
-    extra = 0  # Do not show extra empty forms by default
+    extra = 0
+
+class CustomUserCreationForm(UserCreationForm):
+    class Meta:
+        model = User
+        fields = ("email", "full_name",)
+
+class CustomUserChangeForm(UserChangeForm):
+    class Meta:
+        model = User
+        fields = "__all__"
 
 @admin.register(User)
-class UserAdmin(admin.ModelAdmin):
+class UserAdmin(BaseUserAdmin):
     
-    list_display = ( "email", "full_name", "role", "is_email_verified", "is_active", "is_staff",)
+    form = CustomUserChangeForm
+    add_form = CustomUserCreationForm
+    
+    list_display = ("email", "full_name", "role", "is_email_verified", "is_active", "is_staff",)
 
     search_fields = ("email", "full_name", "phone")
     list_filter = ("role", "is_email_verified", "is_active", "is_staff")
@@ -23,16 +38,33 @@ class UserAdmin(admin.ModelAdmin):
     inlines = [CanteenInline]
 
     fieldsets = (
-        ("Basic Information", {"fields": ("full_name", "email", "phone", "role",)}),
-
+        (None, {"fields": ("email", "password")}),
+        ("Basic Information", {"fields": ("full_name", "phone", "role",)}),
         ("Account Status", {"fields": ("is_email_verified", "is_active", "is_staff", "is_superuser",)}),
-        
-        ("Password", {"fields": ("password",)}),
-         
         ("OTP (For Verification / Reset)", {"fields": ("otp_code", "otp_expires_at",)}),
-        
         ("Important Dates", {"fields": ("last_login", "date_joined",)}),
     )
+
+    add_fieldsets = (
+        (None, {
+            "classes": ("wide",),
+            "fields": ("email", "full_name", "password1", "password2", "role"),
+        }),
+    )
+
+    def save_model(self, request, obj, form, change):
+        if change:
+            if 'password' in form.cleaned_data:
+                password = form.cleaned_data.get('password')
+                if password:
+                    if not (password.startswith('pbkdf2_') or password.startswith('bcrypt') or password.startswith('argon2') or password.startswith('scrypt')):
+                        obj.set_password(password)
+        else:
+            if 'password' in form.cleaned_data:
+                password = form.cleaned_data.get('password')
+                if password:
+                    obj.set_password(password)
+        super().save_model(request, obj, form, change)
 
 @admin.register(Canteen)
 class CanteenAdmin(admin.ModelAdmin):

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import {
     View,
     Text,
+    Image,
     StyleSheet,
     TouchableOpacity,
     Alert,
@@ -14,14 +15,16 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
+import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
-import { getProfile, updateProfile, changePassword } from '../../services/profileService';
+import { getProfile, updateProfile, changePassword, uploadProfileImage } from '../../services/profileService';
 
 export default function ProfileScreen() {
     const router = useRouter();
     const [loading, setLoading] = useState(true);
     const [profile, setProfile] = useState<any>(null);
     const [isEditing, setIsEditing] = useState(false);
+    const [uploading, setUploading] = useState(false);
 
     // Edit Form State
     const [editForm, setEditForm] = useState({ full_name: '', phone: '' });
@@ -49,6 +52,36 @@ export default function ProfileScreen() {
         }
     };
 
+    const handlePickImage = async () => {
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== 'granted') {
+            Alert.alert("Permission Denied", "Camera roll access is needed to upload a profile picture.");
+            return;
+        }
+
+        const result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ['images'],
+            allowsEditing: true,
+            aspect: [1, 1],
+            quality: 0.8,
+        });
+
+        if (result.canceled) return;
+
+        const uri = result.assets[0].uri;
+        setUploading(true);
+        try {
+            const imageUrl = await uploadProfileImage(uri);
+            setProfile((prev: any) => ({ ...prev, profile_image: imageUrl }));
+            Alert.alert("Success", "Profile picture updated!");
+        } catch (error: any) {
+            console.error(error);
+            Alert.alert("Upload Failed", error.message || "Could not upload image.");
+        } finally {
+            setUploading(false);
+        }
+    };
+
     const handleLogout = async () => {
         Alert.alert("Logout", "Are you sure you want to logout?", [
             { text: "Cancel", style: "cancel" },
@@ -65,7 +98,6 @@ export default function ProfileScreen() {
     };
 
     const handleSaveProfile = async () => {
-        // Basic Client Validation
         if (!editForm.full_name.trim()) {
             Alert.alert("Validation Error", "Name cannot be empty.");
             return;
@@ -133,11 +165,24 @@ export default function ProfileScreen() {
         <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 40 }}>
             {/* Header Section */}
             <View style={styles.header}>
-                <View style={styles.avatar}>
-                    <Text style={styles.avatarText}>
-                        {profile?.full_name?.charAt(0).toUpperCase() || "U"}
-                    </Text>
-                </View>
+                <TouchableOpacity onPress={handlePickImage} disabled={uploading} style={styles.avatarWrapper}>
+                    {profile?.profile_image ? (
+                        <Image source={{ uri: profile.profile_image }} style={styles.avatarImage} />
+                    ) : (
+                        <View style={styles.avatar}>
+                            <Text style={styles.avatarText}>
+                                {profile?.full_name?.charAt(0).toUpperCase() || "U"}
+                            </Text>
+                        </View>
+                    )}
+                    <View style={styles.cameraIcon}>
+                        {uploading ? (
+                            <ActivityIndicator size="small" color="#fff" />
+                        ) : (
+                            <Ionicons name="camera" size={16} color="#fff" />
+                        )}
+                    </View>
+                </TouchableOpacity>
                 <Text style={styles.name}>{profile?.full_name}</Text>
                 <Text style={styles.email}>{profile?.email}</Text>
                 <View style={[styles.badge, profile?.is_email_verified ? styles.verified : styles.unverified]}>
@@ -177,13 +222,6 @@ export default function ProfileScreen() {
                     ) : (
                         <Text style={styles.value}>{profile?.phone || "Not set"}</Text>
                     )}
-                </View>
-
-                <View style={styles.divider} />
-
-                <View style={styles.row}>
-                    <Text style={styles.label}>Role</Text>
-                    <Text style={styles.value}>{profile?.role}</Text>
                 </View>
             </View>
 
@@ -301,7 +339,8 @@ const styles = StyleSheet.create({
     },
     header: {
         backgroundColor: '#fff',
-        paddingVertical: 30,
+        paddingTop: 60,
+        paddingBottom: 30,
         alignItems: 'center',
         borderBottomLeftRadius: 24,
         borderBottomRightRadius: 24,
@@ -312,6 +351,10 @@ const styles = StyleSheet.create({
         elevation: 3,
         marginBottom: 20,
     },
+    avatarWrapper: {
+        position: 'relative',
+        marginBottom: 12,
+    },
     avatar: {
         width: 80,
         height: 80,
@@ -319,7 +362,24 @@ const styles = StyleSheet.create({
         backgroundColor: '#E0E2E9',
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 12,
+    },
+    avatarImage: {
+        width: 80,
+        height: 80,
+        borderRadius: 40,
+    },
+    cameraIcon: {
+        position: 'absolute',
+        bottom: 0,
+        right: 0,
+        backgroundColor: '#2E3566',
+        width: 28,
+        height: 28,
+        borderRadius: 14,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 2,
+        borderColor: '#fff',
     },
     avatarText: {
         fontSize: 32,
@@ -351,7 +411,7 @@ const styles = StyleSheet.create({
     badgeText: {
         fontSize: 12,
         fontWeight: '600',
-        color: '#03543F', // Green for verified
+        color: '#03543F',
     },
     card: {
         backgroundColor: '#fff',
@@ -456,7 +516,6 @@ const styles = StyleSheet.create({
         marginBottom: 12,
         gap: 12,
     },
-    // Modal Styles
     modalOverlay: {
         flex: 1,
         backgroundColor: 'rgba(0,0,0,0.5)',

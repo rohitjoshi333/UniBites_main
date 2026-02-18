@@ -39,6 +39,7 @@ class User(AbstractUser):
     email = models.EmailField(unique=True)
     phone = models.CharField(max_length=20, blank=True, null=True)
     role = models.CharField(max_length=10, choices=ROLE_CHOICES, default="USER")
+    profile_image = models.URLField(blank=True, null=True)
 
     is_email_verified = models.BooleanField(default=False)
     otp_code = models.CharField(max_length=6, blank=True, null=True)
@@ -61,6 +62,7 @@ class Canteen(models.Model):
     closing_time = models.CharField(max_length=50)
     rating = models.DecimalField(max_digits=2, decimal_places=1, default=4.0)
     total_items = models.PositiveIntegerField(default=0)
+    image_url = models.URLField(blank=True, null=True)
 
     # later vendors will be linked
     vendor = models.ForeignKey(

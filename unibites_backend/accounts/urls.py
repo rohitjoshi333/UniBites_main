@@ -11,6 +11,8 @@ from .views import (
     ProfileView,
     UpdateProfileView,
     ChangePasswordView,
+    UploadProfileImageView,
+    UploadCanteenImageView,
 )
 
 urlpatterns = [
@@ -22,8 +24,9 @@ urlpatterns = [
     path("reset-password/", ResetPasswordView.as_view()),
     path("canteens/", CanteenListView.as_view()),
     path("vendor/canteen/", VendorCanteenView.as_view()),
+    path("vendor/canteen/upload-image/", UploadCanteenImageView.as_view()),
     path("profile/", ProfileView.as_view()),
     path("profile/update/", UpdateProfileView.as_view()),
     path("profile/change-password/", ChangePasswordView.as_view()),
+    path("profile/upload-image/", UploadProfileImageView.as_view()),
 ]
-

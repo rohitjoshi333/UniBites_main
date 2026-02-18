@@ -16,8 +16,7 @@ const Sidebar = () => {
     return (
         <div className="sidebar">
             <div className="sidebar-header">
-                <ChefHat size={32} />
-                <span>UniBites Vendor</span>
+                <img src="/logo.png" alt="UniBites Logo" className="sidebar-logo" />
             </div>
             <nav style={{ flex: 1 }}>
                 <NavLink
@@ -36,10 +35,12 @@ const Sidebar = () => {
                     <span>Menu Management</span>
                 </NavLink>
             </nav>
-            <button onClick={handleLogout} className="nav-link" style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer' }}>
-                <LogOut size={20} />
-                <span>Logout</span>
-            </button>
+            <div className="logout-btn">
+                <button onClick={handleLogout} className="nav-link" style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer' }}>
+                    <LogOut size={20} />
+                    <span>Logout</span>
+                </button>
+            </div>
         </div>
     );
 };
