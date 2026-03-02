@@ -1,6 +1,8 @@
 from rest_framework import serializers
-from .models import Cart, CartItem
+from .models import Cart, CartItem, Order, OrderItem
 from menu.serializers import MenuItemSerializer
+
+
 
 class CartItemSerializer(serializers.ModelSerializer):
     menu_item = MenuItemSerializer(read_only=True)
@@ -27,3 +29,38 @@ class CartSerializer(serializers.ModelSerializer):
                 "name": obj.canteen.name
             }
         return None
+
+
+
+class OrderItemSerializer(serializers.ModelSerializer):
+    menu_item_name = serializers.SerializerMethodField()
+    subtotal = serializers.ReadOnlyField()
+
+    class Meta:
+        model = OrderItem
+        fields = ['id', 'menu_item_name', 'quantity', 'price', 'subtotal']
+
+    def get_menu_item_name(self, obj):
+        return obj.menu_item.name if obj.menu_item else 'Deleted item'
+
+
+class OrderSerializer(serializers.ModelSerializer):
+    items = OrderItemSerializer(many=True, read_only=True)
+    canteen_name = serializers.CharField(source='canteen.name', read_only=True)
+    user_info = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Order
+        fields = [
+            'id', 'canteen_name', 'user_info',
+            'total_price', 'payment_method', 'status',
+            'created_at', 'items',
+        ]
+
+    def get_user_info(self, obj):
+        return {
+            'id': obj.user.id,
+            'name': obj.user.full_name or obj.user.email,
+            'email': obj.user.email,
+            'phone': obj.user.phone or '—',
+        }

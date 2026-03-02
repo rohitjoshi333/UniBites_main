@@ -75,15 +75,6 @@ export default function HomeScreen() {
         Fuel Your Campus, One Bite at a Time
       </Text>
 
-      <View style={styles.searchBox}>
-        <Ionicons name="search" size={20} color="#888" />
-        <TextInput
-          placeholder="Search for your favorite food"
-          style={styles.searchInput}
-        />
-        <Ionicons name="mic-outline" size={20} color="#888" />
-      </View>
-
       <View style={styles.banner}>
         <Image
           source={require("../assets/images/islingtoncanteen.jpg")}
@@ -183,22 +174,6 @@ const styles = StyleSheet.create({
     color: "#6B7280",
     marginTop: 5,
     textAlign: "center",
-  },
-
-  searchBox: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#F3F4F6",
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    marginTop: 20,
-  },
-
-  searchInput: {
-    flex: 1,
-    marginHorizontal: 8,
-    fontSize: 14,
   },
 
   banner: {

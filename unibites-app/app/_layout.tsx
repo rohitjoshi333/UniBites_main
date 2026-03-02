@@ -57,6 +57,8 @@ export default function Layout() {
             <Tabs.Screen name="verify-otp" options={{ href: null, tabBarStyle: { display: "none" } }} />
             <Tabs.Screen name="reset-password" options={{ href: null, tabBarStyle: { display: "none" } }} />
             <Tabs.Screen name="menu/[canteenId]" options={{ href: null, tabBarStyle: { display: "none" } }} />
+            <Tabs.Screen name="checkout/index" options={{ href: null, tabBarStyle: { display: "none" } }} />
+            <Tabs.Screen name="order-success/index" options={{ href: null, tabBarStyle: { display: "none" } }} />
         </Tabs>
     );
 }

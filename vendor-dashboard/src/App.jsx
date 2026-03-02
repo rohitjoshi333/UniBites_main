@@ -4,6 +4,7 @@ import { AuthProvider, AuthContext } from './context/AuthContext';
 import DashboardLayout from './components/DashboardLayout';
 import Dashboard from './pages/Dashboard';
 import MenuManagement from './pages/MenuManagement';
+import Orders from './pages/Orders';
 import Login from './pages/Login';
 
 const ProtectedRoute = ({ children }) => {
@@ -28,6 +29,7 @@ const App = () => {
           }>
             <Route index element={<Dashboard />} />
             <Route path="menu" element={<MenuManagement />} />
+            <Route path="orders" element={<Orders />} />
           </Route>
         </Routes>
       </BrowserRouter>

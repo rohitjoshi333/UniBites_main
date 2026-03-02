@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from "react";
 import {
     View,
     Text,
+    TextInput,
     StyleSheet,
     Image,
     ScrollView,
@@ -180,6 +181,15 @@ export default function MenuScreen() {
                         </TouchableOpacity>
                     </View>
 
+                    <View style={styles.searchBox}>
+                    <Ionicons name="search" size={20} color="#9CA3AF" />
+                    
+                    <TextInput
+                        placeholder="Search for your favorite food"
+                        placeholderTextColor="#9CA3AF"
+                        style={styles.searchInput} />
+                    </View>
+
                     <View style={styles.listContainer}>
                         {items.length === 0 ? (
                             <View style={styles.emptyState}>
@@ -346,6 +356,29 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
     },
+
+    searchBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    width: "90%",
+    alignSelf: "center",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    height: 44,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    },
+
+    searchInput: {
+    flex: 1,
+    fontSize: 15,
+    color: "#111827",
+    marginHorizontal: 8,
+    paddingVertical: 0,
+    },
+
     itemDetails: {
         flex: 1,
         marginRight: 16,

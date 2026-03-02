@@ -10,6 +10,7 @@ const Dashboard = () => {
         canteenName: '',
         rating: 0,
         canteenImage: '',
+        pendingOrders: 0,
     });
     const [loading, setLoading] = useState(true);
     const [uploading, setUploading] = useState(false);
@@ -26,6 +27,12 @@ const Dashboard = () => {
                 const items = menuRes.data;
                 const active = items.filter(i => i.is_available).length;
 
+                let pendingOrders = 0;
+                try {
+                    const ordersRes = await api.get('vendor/orders/');
+                    pendingOrders = ordersRes.data.filter(o => o.status === 'PENDING').length;
+                } catch (_) { }
+
                 setStats({
                     totalItems: items.length,
                     activeItems: active,
@@ -33,6 +40,7 @@ const Dashboard = () => {
                     rating: canteen.rating,
                     vendorName: canteen.vendor_name,
                     canteenImage: canteen.image_url || '',
+                    pendingOrders,
                 });
             } catch (error) {
                 console.error("Error fetching dashboard data", error);
@@ -98,11 +106,15 @@ const Dashboard = () => {
                         {stats.rating} <small style={{ fontSize: '1.25rem' }}>⭐</small>
                     </span>
                 </div>
+                <div className="stat-card">
+                    <span className="stat-label">Pending Orders</span>
+                    <span className="stat-value" style={{ color: '#D97706' }}>{stats.pendingOrders}</span>
+                </div>
             </div>
 
             <div className="card dashboard-main-card">
                 <div className="dashboard-main-layout">
-                    {/* Canteen Image Section */}
+
                     <div className="dashboard-branding">
                         <div className="dashboard-branding-header">
                             <h2>Canteen Branding</h2>
@@ -143,7 +155,7 @@ const Dashboard = () => {
                         />
                     </div>
 
-                    {/* Quick Management Section */}
+
                     <div className="dashboard-quick">
                         <h2>Quick Actions</h2>
                         <div className="dashboard-quick-card">
@@ -153,6 +165,15 @@ const Dashboard = () => {
                             </div>
                             <button className="btn btn-primary" onClick={() => window.location.href = '/menu'}>
                                 View Menu
+                            </button>
+                        </div>
+                        <div className="dashboard-quick-card">
+                            <div>
+                                <h4>Orders</h4>
+                                <p>Accept or reject incoming orders.</p>
+                            </div>
+                            <button className="btn btn-primary" onClick={() => window.location.href = '/orders'}>
+                                View Orders
                             </button>
                         </div>
                     </div>
