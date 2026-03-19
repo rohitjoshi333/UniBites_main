@@ -8,6 +8,7 @@ const STATUS_CONFIG = {
     ACCEPTED: { label: 'Accepted', className: 'badge-accepted', step: 1 },
     PREPARING: { label: 'Preparing', className: 'badge-preparing', step: 2 },
     READY: { label: 'Ready for Pickup', className: 'badge-ready', step: 3 },
+    COMPLETED: { label: 'Completed', className: 'badge-completed', step: 4 },
     REJECTED: { label: 'Rejected', className: 'badge-rejected', step: -1 },
     CANCELLED: { label: 'Cancelled', className: 'badge-cancelled', step: -1 },
 };
@@ -17,6 +18,7 @@ const STEPS = [
     { key: 'ACCEPTED', label: 'Accepted' },
     { key: 'PREPARING', label: 'Preparing' },
     { key: 'READY', label: 'Ready' },
+    { key: 'COMPLETED', label: 'Picked Up' },
 ];
 
 const ACTION_MAP = {
@@ -26,6 +28,7 @@ const ACTION_MAP = {
     ],
     ACCEPTED: [{ label: 'Start Preparing', next: 'PREPARING', variant: 'btn-preparing' }],
     PREPARING: [{ label: 'Mark Ready for Pickup', next: 'READY', variant: 'btn-ready' }],
+    READY: [{ label: 'Order Picked Up', next: 'COMPLETED', variant: 'btn-completed' }],
 };
 
 const StatusStepper = ({ status }) => {
@@ -180,9 +183,10 @@ const VendorOrders = () => {
                     { label: 'Preparing', value: orders.filter(o => o.status === 'PREPARING').length, color: '#7C3AED' },
                     { label: 'Accepted', value: orders.filter(o => o.status === 'ACCEPTED').length, color: '#059669' },
                     { label: 'Ready', value: orders.filter(o => o.status === 'READY').length, color: '#0284C7' },
+                    { label: 'Completed', value: orders.filter(o => o.status === 'COMPLETED').length, color: '#10B981' },
                     { label: 'Rejected', value: orders.filter(o => o.status === 'REJECTED').length, color: '#DC2626' },
-                ].map(s => (
-                    <div key={s.label} className="stat-card">
+                ].map((s, idx) => (
+                    <div key={`${s.label}-${idx}`} className="stat-card">
                         <span className="stat-label">{s.label}</span>
                         <span className="stat-value" style={{ color: s.color }}>{s.value}</span>
                     </div>
@@ -191,7 +195,7 @@ const VendorOrders = () => {
 
 
             <div className="order-filters">
-                {['ALL', 'PENDING', 'ACCEPTED', 'PREPARING', 'READY', 'REJECTED', 'CANCELLED'].map(f => (
+                {['ALL', 'PENDING', 'ACCEPTED', 'PREPARING', 'READY', 'COMPLETED', 'REJECTED', 'CANCELLED'].map(f => (
                     <button
                         key={f}
                         className={`order-filter-btn ${filter === f ? 'active' : ''}`}

@@ -538,19 +538,24 @@ body {
     color: #059669;
 }
 
-.badge-preparing {
-    background-color: #EDE9FE;
-    color: #7C3AED;
+.badge-preparing { 
+    background-color: #ede9fe; 
+    color: #7c3aed; 
 }
 
 .badge-ready {
-    background-color: #DBEAFE;
-    color: #1D4ED8;
+    background-color: #e0f2fe;
+    color: #0284c7; 
 }
 
-.badge-rejected {
-    background-color: #FEE2E2;
-    color: #DC2626;
+.badge-completed { 
+    background-color: #d1fae5; 
+    color: #059669; 
+}
+
+.badge-rejected { 
+    background-color: #fee2e2; 
+    color: #dc2626; 
 }
 
 .badge-cancelled {
@@ -667,15 +672,21 @@ body {
 }
 
 .btn-ready {
-    background-color: #DBEAFE;
-    color: #1E40AF;
-    border: 1px solid #BFDBFE;
+    background-color: #0ea5e9;
+    color: white;
+}
+.btn-ready:hover { 
+    background-color: #0284c7; 
 }
 
-.btn-ready:hover {
-    background-color: #BFDBFE;
+.btn-completed {
+    background-color: #10B981;
+    color: white;
 }
 
+.btn-completed:hover { 
+    background-color: #059669; 
+}
 
 
 .orders-list {

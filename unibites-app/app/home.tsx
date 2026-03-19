@@ -222,11 +222,13 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 12,
     marginTop: 12,
+    borderWidth: 1,
+    borderColor: "#f2f2f2ff",
   },
 
   canteenThumb: {
-    width: 56,
-    height: 56,
+    width: 60,
+    height: 60,
     borderRadius: 12,
     backgroundColor: "#E5E7EB",
     marginRight: 12,
@@ -258,11 +260,12 @@ const styles = StyleSheet.create({
   ratingRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
+    gap: 5,
+    marginBottom: 10,
   },
 
   ratingText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: "600",
     color: "#333",
   },
@@ -271,11 +274,11 @@ const styles = StyleSheet.create({
     backgroundColor: "#E5E7EB",
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 20,
+    borderRadius: 15,
   },
 
   itemText: {
-    fontSize: 12,
+    fontSize: 13,
   },
 });
 

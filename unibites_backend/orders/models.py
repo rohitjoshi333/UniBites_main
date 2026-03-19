@@ -47,6 +47,7 @@ class Order(models.Model):
         READY = 'READY', 'Ready for Pickup'
         REJECTED = 'REJECTED', 'Rejected'
         CANCELLED = 'CANCELLED', 'Cancelled'
+        COMPLETED = 'COMPLETED', 'Completed'
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='orders')
     canteen = models.ForeignKey(Canteen, on_delete=models.CASCADE, related_name='orders')

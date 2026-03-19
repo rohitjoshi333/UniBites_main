@@ -8,9 +8,11 @@ import {
     ActivityIndicator,
     RefreshControl,
     Alert,
+    Modal,
 } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import * as SecureStore from 'expo-secure-store';
 import { getMyOrders, cancelOrder } from '../../services/orderService';
 
 const STATUS_CONFIG: Record<string, { color: string; bg: string; icon: any }> = {
@@ -18,6 +20,7 @@ const STATUS_CONFIG: Record<string, { color: string; bg: string; icon: any }> = 
     ACCEPTED: { color: '#059669', bg: '#D1FAE5', icon: 'checkmark-circle-outline' },
     PREPARING: { color: '#7C3AED', bg: '#EDE9FE', icon: 'restaurant-outline' },
     READY: { color: '#1D4ED8', bg: '#DBEAFE', icon: 'bag-check-outline' },
+    COMPLETED: { color: '#059669', bg: '#D1FAE5', icon: 'star-outline' },
     REJECTED: { color: '#DC2626', bg: '#FEE2E2', icon: 'close-circle-outline' },
     CANCELLED: { color: '#6B7280', bg: '#F3F4F6', icon: 'ban-outline' },
 };
@@ -28,13 +31,16 @@ const OrderCard = ({ order, onCancel }: { order: any; onCancel: (id: number) => 
     const date = new Date(order.created_at);
     const dateStr = date.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
     const timeStr = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    const firstItemName = order.items && order.items.length > 0 ? order.items[0].menu_item_name : 'Order';
+    const extraCount = order.items ? order.items.length - 1 : 0;
+    const orderTitle = extraCount > 0 ? `${firstItemName} +${extraCount}` : firstItemName;
 
     return (
         <View style={styles.card}>
 
             <View style={styles.cardHeader}>
-                <View>
-                    <Text style={styles.orderId}>Order #{order.id}</Text>
+                <View style={{ flex: 1, paddingRight: 10 }}>
+                    <Text style={styles.orderId} numberOfLines={1}>{orderTitle}</Text>
                     <Text style={styles.orderCanteen}>{order.canteen_name}</Text>
                 </View>
                 <View style={[styles.statusBadge, { backgroundColor: statusCfg.bg }]}>
@@ -97,10 +103,31 @@ export default function OrdersScreen() {
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
 
+    const [ratingOrder, setRatingOrder] = useState<any>(null);
+    const [hasRated, setHasRated] = useState(false);
+    const [dismissedRatings, setDismissedRatings] = useState<Set<number>>(new Set());
+
     const fetchOrders = async () => {
         try {
             const data = await getMyOrders();
             setOrders(data);
+
+            // Show popup automatically for the first COMPLETED order that hasn't been dismissed yet
+            let storedDismissed = new Set<number>();
+            try {
+                const stored = await SecureStore.getItemAsync('dismissedRatings');
+                if (stored) {
+                    const parsed = JSON.parse(stored);
+                    storedDismissed = new Set(parsed);
+                    setDismissedRatings(storedDismissed);
+                }
+            } catch (e) { console.log('Error reading secure store'); }
+
+            const unrated = data.find((o: any) => o.status === 'COMPLETED' && !storedDismissed.has(o.id));
+            if (unrated && !ratingOrder) {
+                setRatingOrder(unrated);
+                setHasRated(false);
+            }
         } catch (e) {
             console.error('Failed to fetch orders', e);
         } finally {
@@ -121,6 +148,18 @@ export default function OrdersScreen() {
             console.error('Failed to cancel order', e);
             Alert.alert('Error', 'Failed to cancel order. Please try again.');
         }
+    };
+
+    const handleCloseModal = async () => {
+        if (ratingOrder) {
+            const newDismissed = new Set(dismissedRatings).add(ratingOrder.id);
+            setDismissedRatings(newDismissed);
+            try {
+                await SecureStore.setItemAsync('dismissedRatings', JSON.stringify(Array.from(newDismissed)));
+            } catch (e) { }
+        }
+        setRatingOrder(null);
+        setHasRated(false);
     };
 
     if (loading) {
@@ -155,6 +194,57 @@ export default function OrdersScreen() {
                     </View>
                 }
             />
+
+            <Modal visible={!!ratingOrder} transparent animationType="fade">
+                <View style={[styles.center, { backgroundColor: 'rgba(0,0,0,0.5)' }]}>
+                    <View style={styles.premiumModalContent}>
+                        {!hasRated ? (
+                            <View style={styles.modalBody}>
+                                <Text style={styles.premiumTitle}>Enjoyed your meal?</Text>
+                                <Text style={styles.premiumDesc}>
+                                    Take a moment to rate your experience at{"\n"}
+                                    <Text style={styles.canteenHighlight}>{ratingOrder?.canteen_name}</Text>
+                                </Text>
+
+                                <View style={styles.dummyStarsContainer}>
+                                    {[1, 2, 3, 4, 5].map(i => (
+                                        <Ionicons key={i} name="star-outline" size={32} color="#CBD5E1" style={styles.dummyStar} />
+                                    ))}
+                                </View>
+
+                                <TouchableOpacity
+                                    style={styles.premiumRateBtn}
+                                    activeOpacity={0.8}
+                                    onPress={() => setHasRated(true)}
+                                >
+                                    <Text style={styles.premiumRateBtnText}>Rate Experience</Text>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity
+                                    style={styles.premiumCloseBtn}
+                                    onPress={handleCloseModal}
+                                >
+                                    <Text style={styles.premiumCloseBtnText}>Maybe Later</Text>
+                                </TouchableOpacity>
+                            </View>
+                        ) : (
+                            <View style={styles.modalBody}>
+                                <Text style={styles.premiumTitle}>Thank You!</Text>
+                                <Text style={styles.premiumDesc}>
+                                    Thank you for your rating. Your feedback helps us serve you better.
+                                </Text>
+                                <TouchableOpacity
+                                    style={styles.premiumRateBtn}
+                                    activeOpacity={0.8}
+                                    onPress={handleCloseModal}
+                                >
+                                    <Text style={styles.premiumRateBtnText}>Done</Text>
+                                </TouchableOpacity>
+                            </View>
+                        )}
+                    </View>
+                </View>
+            </Modal>
         </View>
     );
 }
@@ -347,5 +437,89 @@ const styles = StyleSheet.create({
         fontWeight: "600",
         color: "#DC2626",
     },
-});
+    premiumModalContent: {
+        width: '85%',
+        maxWidth: 340,
+        backgroundColor: '#FFFFFF',
+        borderRadius: 24,
+        overflow: 'hidden',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.15,
+        shadowRadius: 20,
+        elevation: 15,
+    },
 
+    modalBody: {
+        paddingTop: 40,
+        paddingHorizontal: 24,
+        paddingBottom: 24,
+        alignItems: 'center',
+    },
+
+    premiumTitle: {
+        fontSize: 22,
+        fontWeight: '800',
+        color: '#0F172A',
+        textAlign: 'center',
+        marginBottom: 12,
+    },
+
+    premiumDesc: {
+        fontSize: 14,
+        color: '#64748B',
+        textAlign: 'center',
+        lineHeight: 22,
+        marginBottom: 24,
+    },
+
+    canteenHighlight: {
+        fontWeight: '700',
+        color: '#1E293B',
+        fontSize: 15,
+    },
+
+    dummyStarsContainer: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        marginBottom: 30,
+        width: '100%',
+    },
+
+    dummyStar: {
+        marginHorizontal: 6,
+    },
+
+    premiumRateBtn: {
+        backgroundColor: '#F5A623',
+        width: '100%',
+        paddingVertical: 16,
+        borderRadius: 14,
+        alignItems: 'center',
+        marginBottom: 12,
+        shadowColor: '#F5A623',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 8,
+        elevation: 4,
+    },
+
+    premiumRateBtnText: {
+        color: '#FFFFFF',
+        fontWeight: '800',
+        fontSize: 16,
+        letterSpacing: 0.5,
+    },
+
+    premiumCloseBtn: {
+        width: '100%',
+        paddingVertical: 12,
+        alignItems: 'center',
+    },
+
+    premiumCloseBtnText: {
+        color: '#94A3B8',
+        fontWeight: '600',
+        fontSize: 15,
+    },
+});

@@ -181,7 +181,8 @@ class VendorOrderStatusView(APIView):
         Order.Status.PENDING:    [Order.Status.ACCEPTED, Order.Status.REJECTED],
         Order.Status.ACCEPTED:   [Order.Status.PREPARING],
         Order.Status.PREPARING:  [Order.Status.READY],
-        Order.Status.READY:      [],
+        Order.Status.READY:      [Order.Status.COMPLETED],
+        Order.Status.COMPLETED:  [],
         Order.Status.REJECTED:   [],
     }
 
