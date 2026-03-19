@@ -137,7 +137,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#f7f7f7ff",
     alignItems: "center",
-    paddingTop: 10,
+    paddingTop: 50,
   },
 
   logo: {

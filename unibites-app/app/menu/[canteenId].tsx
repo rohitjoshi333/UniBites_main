@@ -43,6 +43,7 @@ export default function MenuScreen() {
     const [cartItems, setCartItems] = useState<{ [menuItemId: number]: number }>({});
     const [cartTotal, setCartTotal] = useState({ count: 0, price: 0 });
     const [cartIdMap, setCartIdMap] = useState<{ [menuItemId: number]: number }>({});
+    const [searchQuery, setSearchQuery] = useState('');
 
     const fetchMenu = async () => {
         try {
@@ -182,22 +183,43 @@ export default function MenuScreen() {
                     </View>
 
                     <View style={styles.searchBox}>
-                    <Ionicons name="search" size={20} color="#9CA3AF" />
-                    
-                    <TextInput
-                        placeholder="Search for your favorite food"
-                        placeholderTextColor="#9CA3AF"
-                        style={styles.searchInput} />
+                        <Ionicons name="search" size={20} color="#9CA3AF" />
+
+                        <TextInput
+                            placeholder="Search for your favorite food"
+                            placeholderTextColor="#9CA3AF"
+                            style={styles.searchInput}
+                            value={searchQuery}
+                            onChangeText={setSearchQuery}
+                        />
                     </View>
 
                     <View style={styles.listContainer}>
-                        {items.length === 0 ? (
-                            <View style={styles.emptyState}>
-                                <Ionicons name="fast-food-outline" size={48} color="#ccc" />
-                                <Text style={styles.emptyText}>No items available at the moment.</Text>
-                            </View>
-                        ) : (
-                            items.map((item) => {
+                        {(() => {
+                            const filteredItems = items.filter((item) => {
+                                const q = searchQuery.toLowerCase().trim();
+                                if (!q) return true;
+                                return (
+                                    item.name.toLowerCase().includes(q) ||
+                                    (item.description && item.description.toLowerCase().includes(q))
+                                );
+                            });
+
+                            if (items.length === 0) return (
+                                <View style={styles.emptyState}>
+                                    <Ionicons name="fast-food-outline" size={48} color="#ccc" />
+                                    <Text style={styles.emptyText}>No items available at the moment.</Text>
+                                </View>
+                            );
+
+                            if (filteredItems.length === 0) return (
+                                <View style={styles.emptyState}>
+                                    <Ionicons name="search-outline" size={48} color="#ccc" />
+                                    <Text style={styles.emptyText}>No results for "{searchQuery}"</Text>
+                                </View>
+                            );
+
+                            return filteredItems.map((item) => {
                                 const qty = cartItems[item.id] || 0;
                                 return (
                                     <View key={item.id} style={styles.card}>
@@ -244,8 +266,8 @@ export default function MenuScreen() {
                                         </View>
                                     </View>
                                 )
-                            })
-                        )}
+                            });
+                        })()}
                     </View>
                 </ScrollView>
 
@@ -358,25 +380,25 @@ const styles = StyleSheet.create({
     },
 
     searchBox: {
-    flexDirection: "row",
-    alignItems: "center",
-    width: "90%",
-    alignSelf: "center",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    height: 44,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
+        flexDirection: "row",
+        alignItems: "center",
+        width: "90%",
+        alignSelf: "center",
+        backgroundColor: "#FFFFFF",
+        borderRadius: 12,
+        paddingHorizontal: 12,
+        height: 44,
+        marginBottom: 20,
+        borderWidth: 1,
+        borderColor: "#E5E7EB",
     },
 
     searchInput: {
-    flex: 1,
-    fontSize: 15,
-    color: "#111827",
-    marginHorizontal: 8,
-    paddingVertical: 0,
+        flex: 1,
+        fontSize: 15,
+        color: "#111827",
+        marginHorizontal: 8,
+        paddingVertical: 0,
     },
 
     itemDetails: {
