@@ -157,6 +157,7 @@ class ResetPasswordSerializer(serializers.Serializer):
 class CanteenSerializer(serializers.ModelSerializer):
     vendor_name = serializers.CharField(source='vendor.full_name', read_only=True)
     vendor_email = serializers.EmailField(source='vendor.email', read_only=True)
+    total_items = serializers.SerializerMethodField()
     
     class Meta:
         model = Canteen
@@ -172,6 +173,9 @@ class CanteenSerializer(serializers.ModelSerializer):
             "total_items",
             "image_url",
         ]
+
+    def get_total_items(self, obj):
+        return obj.menu_items.filter(is_available=True).count()
         
 class ProfileSerializer(serializers.ModelSerializer):
     role = serializers.CharField(source='get_role_display')
