@@ -213,7 +213,11 @@ const CartScreen = () => {
                         <Text style={styles.footerLabel}>Total Bill</Text>
                         <Text style={styles.footerValue}>Rs. {calculateTotal()}</Text>
                     </View>
-                    <TouchableOpacity style={styles.checkoutBtn} onPress={() => Alert.alert("Checkout", "Checkout flow coming soon!")}>
+
+                    <TouchableOpacity 
+                        style={styles.checkoutBtn} 
+                        onPress={() => router.push('/checkout')}
+                    >
                         <Text style={styles.checkoutText}>Checkout Now</Text>
                         <Ionicons name="chevron-forward" size={20} color="white" style={{ marginLeft: 8 }} />
                     </TouchableOpacity>

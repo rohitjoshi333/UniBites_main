@@ -1,10 +1,10 @@
 import React from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, UtensilsCrossed, LogOut, ChefHat, ClipboardList } from 'lucide-react';
+import { LayoutDashboard, Users, Store, LogOut, FileText, ClipboardList, Settings } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 import '../styles/dashboard.css';
 
-const Sidebar = () => {
+const AdminSidebar = () => {
     const { logout } = React.useContext(AuthContext);
     const navigate = useNavigate();
 
@@ -14,32 +14,32 @@ const Sidebar = () => {
     };
 
     return (
-        <div className="sidebar">
+        <div className="sidebar admin-sidebar">
             <div className="sidebar-header">
                 <img src="/logo.png" alt="UniBites Logo" className="sidebar-logo" />
             </div>
             <nav style={{ flex: 1 }}>
                 <NavLink
-                    to="/"
+                    to="/admin"
                     className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
                     end
                 >
                     <LayoutDashboard size={20} />
-                    <span>Overview</span>
+                    <span>Dashboard</span>
                 </NavLink>
                 <NavLink
-                    to="/menu"
+                    to="/admin/users"
                     className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
                 >
-                    <UtensilsCrossed size={20} />
-                    <span>Menu Management</span>
+                    <Users size={20} />
+                    <span>Manage User</span>
                 </NavLink>
                 <NavLink
-                    to="/orders"
+                    to="/admin/canteens"
                     className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
                 >
-                    <ClipboardList size={20} />
-                    <span>Orders</span>
+                    <Store size={20} />
+                    <span>Manage Canteens</span>
                 </NavLink>
             </nav>
             <div className="logout-btn">
@@ -52,15 +52,15 @@ const Sidebar = () => {
     );
 };
 
-const DashboardLayout = () => {
+const AdminLayout = () => {
     return (
         <div className="dashboard-container">
-            <Sidebar />
-            <main className="main-content">
+            <AdminSidebar />
+            <main className="main-content admin-main-content">
                 <Outlet />
             </main>
         </div>
     );
 };
 
-export default DashboardLayout;
+export default AdminLayout;

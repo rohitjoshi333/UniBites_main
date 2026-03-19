@@ -156,6 +156,7 @@ class ResetPasswordSerializer(serializers.Serializer):
 
 class CanteenSerializer(serializers.ModelSerializer):
     vendor_name = serializers.CharField(source='vendor.full_name', read_only=True)
+    vendor_email = serializers.EmailField(source='vendor.email', read_only=True)
     
     class Meta:
         model = Canteen
@@ -163,6 +164,7 @@ class CanteenSerializer(serializers.ModelSerializer):
             "id",
             "name",
             "vendor_name",
+            "vendor_email",
             "location",
             "opening_time",
             "closing_time",

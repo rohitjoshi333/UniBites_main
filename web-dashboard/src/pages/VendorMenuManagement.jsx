@@ -3,7 +3,7 @@ import { Plus, Edit2, Trash2, X, Upload } from 'lucide-react';
 import api from '../services/api';
 import '../styles/dashboard.css';
 
-const MenuManagement = () => {
+const VendorMenuManagement = () => {
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -260,4 +260,4 @@ const MenuManagement = () => {
     );
 };
 
-export default MenuManagement;
+export default VendorMenuManagement;

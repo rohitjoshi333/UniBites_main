@@ -1,9 +1,7 @@
-import React, { useState, useContext, useEffect } from 'react';
+import React, { useState, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import '../styles/dashboard.css';
-
-const LOGIN_URL = 'http://localhost:8000/api/auth/login/';
 
 const Login = () => {
     const [email, setEmail] = useState('');
@@ -15,11 +13,15 @@ const Login = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
-        const success = await login(email, password);
-        if (success) {
-            navigate('/');
+        const result = await login(email, password);
+        if (result.success) {
+            if (result.role === 'ADMIN') {
+                navigate('/admin');
+            } else {
+                navigate('/');
+            }
         } else {
-            setError('Invalid credentials or not a vendor account.');
+            setError(result.message || 'Invalid credentials.');
         }
     };
 
@@ -28,8 +30,8 @@ const Login = () => {
             <div className="login-card">
                 <div className="login-header">
                     <img src="/logo.png" alt="UniBites Logo" className="login-logo" />
-                    <h2 className="login-title">Vendor Portal</h2>
-                    <p className="login-subtitle">Manage your canteen with ease</p>
+                    <h2 className="login-title">Dashboard</h2>
+                    <p className="login-subtitle">Sign in to your account</p>
                 </div>
 
                 {error && <div className="login-error">{error}</div>}
@@ -40,7 +42,7 @@ const Login = () => {
                         <input
                             type="email"
                             className="form-input"
-                            placeholder="vendor@unibites.com"
+                            placeholder="email@islingtoncollege.edu.np"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             required

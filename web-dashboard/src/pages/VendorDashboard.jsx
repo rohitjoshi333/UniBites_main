@@ -3,7 +3,7 @@ import { Upload, ImageIcon } from 'lucide-react';
 import api from '../services/api';
 import '../styles/dashboard.css';
 
-const Dashboard = () => {
+const VendorDashboard = () => {
     const [stats, setStats] = useState({
         totalItems: 0,
         activeItems: 0,
@@ -183,5 +183,5 @@ const Dashboard = () => {
     );
 };
 
-export default Dashboard;
+export default VendorDashboard;
 

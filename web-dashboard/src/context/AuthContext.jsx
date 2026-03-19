@@ -13,7 +13,7 @@ export const AuthProvider = ({ children }) => {
             const role = localStorage.getItem("user_role");
             const fullName = localStorage.getItem("user_full_name");
 
-            if (token && role === "VENDOR") {
+            if (token && (role === "VENDOR" || role === "ADMIN")) {
                 setUser({ role, full_name: fullName });
             } else {
                 localStorage.clear();
@@ -28,9 +28,8 @@ export const AuthProvider = ({ children }) => {
             const response = await api.post("auth/login/", { email, password });
             const { access, refresh, role, full_name } = response.data;
 
-            if (role !== "VENDOR") {
-                alert("Access denied. Only vendors can log in.");
-                return false;
+            if (role !== "VENDOR" && role !== "ADMIN") {
+                return { success: false, message: "Access denied. Only vendors and admins can log in." };
             }
 
             localStorage.setItem("access_token", access);
@@ -39,10 +38,10 @@ export const AuthProvider = ({ children }) => {
             localStorage.setItem("user_full_name", full_name);
 
             setUser({ role, full_name });
-            return true;
+            return { success: true, role };
         } catch (error) {
             console.error("Login failed", error);
-            return false;
+            return { success: false, message: "Invalid email or password." };
         }
     };
 

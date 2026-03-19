@@ -52,19 +52,8 @@ class UserAdmin(BaseUserAdmin):
         }),
     )
 
-    def save_model(self, request, obj, form, change):
-        if change:
-            if 'password' in form.cleaned_data:
-                password = form.cleaned_data.get('password')
-                if password:
-                    if not (password.startswith('pbkdf2_') or password.startswith('bcrypt') or password.startswith('argon2') or password.startswith('scrypt')):
-                        obj.set_password(password)
-        else:
-            if 'password' in form.cleaned_data:
-                password = form.cleaned_data.get('password')
-                if password:
-                    obj.set_password(password)
-        super().save_model(request, obj, form, change)
+    # Password hashing is handled automatically by Django's UserChangeForm
+    # and UserCreationForm — no custom save_model needed.
 
 @admin.register(Canteen)
 class CanteenAdmin(admin.ModelAdmin):

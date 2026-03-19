@@ -132,7 +132,7 @@ const OrderCard = ({ order, onStatusUpdate }) => {
     );
 };
 
-const Orders = () => {
+const VendorOrders = () => {
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -222,4 +222,4 @@ const Orders = () => {
     );
 };
 
-export default Orders;
+export default VendorOrders;
