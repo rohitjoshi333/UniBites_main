@@ -3,9 +3,12 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from django.shortcuts import get_object_or_404
+from django.conf import settings
+import uuid
 from .models import Cart, CartItem, Order, OrderItem
 from menu.models import MenuItem
 from .serializers import CartSerializer, OrderSerializer
+from .esewa import generate_signature, verify_esewa_response
 
 
 
@@ -150,6 +153,9 @@ class CancelOrderView(APIView):
         if order.status != Order.Status.PENDING:
             return Response({"error": "Only pending orders can be cancelled."}, status=400)
 
+        if order.payment_method == 'ESEWA':
+            return Response({"error": "Online paid orders cannot be cancelled directly. Please contact the canteen."}, status=400)
+
         order.status = Order.Status.CANCELLED
         order.save(update_fields=['status'])
 
@@ -165,8 +171,13 @@ class VendorOrdersView(APIView):
         if user.role != 'VENDOR':
             return Response({"error": "Only vendors can access this."}, status=403)
 
+        from django.db.models import Q
+        
+        # Vendors should not see eSewa orders that haven't been paid yet
         orders = Order.objects.filter(
             canteen__vendor=user
+        ).exclude(
+            Q(payment_method='ESEWA') & Q(payment_status=Order.PaymentStatus.PENDING_PAYMENT)
         ).select_related('user', 'canteen').prefetch_related('items__menu_item')
 
         serializer = OrderSerializer(orders, many=True)
@@ -176,7 +187,6 @@ class VendorOrdersView(APIView):
 class VendorOrderStatusView(APIView):
     permission_classes = [IsAuthenticated]
 
-    # Valid transitions: current status → allowed next statuses
     TRANSITIONS = {
         Order.Status.PENDING:    [Order.Status.ACCEPTED, Order.Status.REJECTED],
         Order.Status.ACCEPTED:   [Order.Status.PREPARING],
@@ -215,4 +225,156 @@ class VendorOrderStatusView(APIView):
 
         serializer = OrderSerializer(order)
         return Response(serializer.data)
+
+
+class EsewaInitiateView(APIView):
+
+    # POST /api/orders/esewa/initiate/
+    # Creates a pending eSewa order & returns the signed form parameters that the mobile app uses to redirect the user to eSewa's payment page
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        cart, _ = Cart.objects.get_or_create(user=request.user)
+        cart_items = cart.items.select_related('menu_item__canteen').all()
+
+        if not cart_items.exists():
+            return Response({"error": "Your cart is empty."}, status=400)
+
+        canteen = cart.canteen
+        if not canteen:
+            return Response({"error": "Unable to determine canteen from cart."}, status=400)
+
+        total_price = cart.total_price
+        transaction_uuid = f"unibites-{uuid.uuid4().hex[:16]}"
+
+        # Create a pending-payment order
+        order = Order.objects.create(
+            user=request.user,
+            canteen=canteen,
+            total_price=total_price,
+            payment_method='ESEWA',
+            payment_status=Order.PaymentStatus.PENDING_PAYMENT,
+            payment_ref_id=transaction_uuid,
+            status=Order.Status.PENDING,
+        )
+
+        for cart_item in cart_items:
+            OrderItem.objects.create(
+                order=order,
+                menu_item=cart_item.menu_item,
+                quantity=cart_item.quantity,
+                price=cart_item.menu_item.price,
+            )
+        cart_items.delete()
+
+        product_code = settings.ESEWA_PRODUCT_CODE
+        total_amount_str = str(total_price)
+        signature = generate_signature(total_amount_str, transaction_uuid, product_code)
+
+        # Deep-link back into the app after payment
+        success_url = "https://7a27-2400-74e0-0-58d4-35b6-69b0-5a9b-79b9.ngrok-free.app/api/orders/esewa/verify/"
+        failure_url = f"https://7a27-2400-74e0-0-58d4-35b6-69b0-5a9b-79b9.ngrok-free.app/api/orders/esewa/verify/?status=failed&uuid={transaction_uuid}"
+
+        return Response({
+            "order_id": order.id,
+            "esewa_url": settings.ESEWA_PAYMENT_URL,
+            "form_params": {
+                "amount": total_amount_str,
+                "tax_amount": "0",
+                "product_service_charge": "0",
+                "product_delivery_charge": "0",
+                "total_amount": total_amount_str,
+                "transaction_uuid": transaction_uuid,
+                "product_code": product_code,
+                "success_url": success_url,
+                "failure_url": failure_url,
+                "signed_field_names": "total_amount,transaction_uuid,product_code",
+                "signature": signature,
+            }
+        }, status=status.HTTP_201_CREATED)
+
+
+from django.http import HttpResponse
+
+def deep_link_redirect(url, order_id):
+    msg_type = "PAYMENT_FAILED" if order_id == "failed" else "PAYMENT_SUCCESS"
+    html = f"""
+    <html>
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Redirecting to UniBites...</title>
+        <style>
+          body {{ display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; font-family: sans-serif; background-color: #f7f9fc; margin: 0; }}
+          .loader {{ border: 4px solid #e2e8f0; border-top: 4px solid #60C271; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 20px; }}
+          @keyframes spin {{ 0% {{ transform: rotate(0deg); }} 100% {{ transform: rotate(360deg); }} }}
+          p {{ color: #64748B; }}
+          a {{ color: #60C271; font-weight: bold; text-decoration: none; margin-top: 20px; }}
+        </style>
+      </head>
+      <body>
+        <div class="loader"></div>
+        <h2>Payment Processed</h2>
+        <p>Returning you to the app...</p>
+        <a href="{url}">Click here if nothing happens</a>
+        <script>
+          setTimeout(function() {{
+            var msg = JSON.stringify({{ "type": "{msg_type}", "orderId": "{order_id}" }});
+            if (window.ReactNativeWebView) {{
+                window.ReactNativeWebView.postMessage(msg);
+            }} else {{
+                window.top.location.href = "{url}";
+            }}
+          }}, 500);
+        </script>
+      </body>
+    </html>
+    """
+    return HttpResponse(html)
+
+class EsewaVerifyView(APIView):
+
+    # GET /api/orders/esewa/verify/?data=<base64>
+    # Called by eSewa after a successful payment. Verifies HMAC & marks order as PAID & can be hit server to server or as a redirect target, then redirects to deep link.
+
+    permission_classes = []
+
+    def get(self, request):
+        # Handle user cancellation / failure from eSewa
+        if request.query_params.get('status') == 'failed':
+            uuid_param = request.query_params.get('uuid')
+            if uuid_param:
+                Order.objects.filter(payment_ref_id=uuid_param, payment_status=Order.PaymentStatus.PENDING_PAYMENT).update(
+                    payment_status=Order.PaymentStatus.FAILED,
+                    status=Order.Status.CANCELLED
+                )
+            return deep_link_redirect("unibitesapp://payment-success?orderId=failed", "failed")
+
+        encoded_data = request.query_params.get('data')
+        if not encoded_data:
+            return Response({"error": "Missing payment data."}, status=400)
+
+        verified_data = verify_esewa_response(encoded_data)
+        if not verified_data:
+            return Response({"error": "Payment verification failed. Invalid signature."}, status=400)
+
+        transaction_uuid = verified_data.get('transaction_uuid', '')
+        esewa_status = verified_data.get('status', '')
+
+        if esewa_status.upper() != 'COMPLETE':
+            return Response({"error": f"Payment not completed. Status: {esewa_status}"}, status=400)
+
+        try:
+            order = Order.objects.get(payment_ref_id=transaction_uuid)
+        except Order.DoesNotExist:
+            return Response({"error": "Order not found."}, status=404)
+
+        if order.payment_status == Order.PaymentStatus.PAID:
+            return deep_link_redirect(f"unibitesapp://payment-success?orderId={order.id}", order.id)
+
+        order.payment_status = Order.PaymentStatus.PAID
+        order.save(update_fields=['payment_status'])
+
+        # Redirect to deep link so the mobile app picks it up
+        return deep_link_redirect(f"unibitesapp://payment-success?orderId={order.id}", order.id)
 

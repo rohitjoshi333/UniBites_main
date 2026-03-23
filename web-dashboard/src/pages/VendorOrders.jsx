@@ -77,60 +77,74 @@ const OrderCard = ({ order, onStatusUpdate }) => {
     const timeStr = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 
     return (
-        <div className={`order-card ${order.status === 'PENDING' ? 'order-card-pending' : ''}`}>
-
-            <div className="order-card-header">
-                <div className="order-card-info">
-                    <div className="order-id">Order #{order.id}</div>
-                    <div className="order-customer">
-                        <span className="customer-detail"><User size={12} /> {order.user_info?.name}</span>
-                        <span className="customer-detail"><Mail size={12} /> {order.user_info?.email}</span>
-                        <span className="customer-detail"><Phone size={12} /> {order.user_info?.phone}</span>
-                    </div>
-                </div>
-                <div className="order-card-right">
+        <div className={`order-card-compact ${order.status === 'PENDING' ? 'pulse-pending' : ''}`}>
+            
+            <div className="occ-top">
+                <div className="occ-top-left">
+                    <span className="occ-id">#{order.id}</span>
+                    <span className="occ-date">{dateStr} · {timeStr}</span>
                     <span className={`badge ${cfg.className}`}>{cfg.label}</span>
-                    <div className="order-total">Rs. {order.total_price}</div>
-                    <div className="order-date">{dateStr} · {timeStr}</div>
+                </div>
+                <div className="occ-top-right">
+                    {order.payment_method === 'ESEWA' ? (
+                        <span className={`occ-payment ${order.payment_status === 'PAID' ? 'paid' : 'failed'}`}>
+                            {order.payment_status === 'PAID' ? '✓ eSewa' : '✕ eSewa Failed'}
+                        </span>
+                    ) : (
+                        <span className="occ-payment cash">⏳ Cash</span>
+                    )}
+                    <span className="occ-total">Rs. {order.total_price}</span>
                 </div>
             </div>
 
+            <div className="occ-middle">
+                <div className="occ-customer">
+                    <div className="occ-customer-item"><User size={14}/> <span>{order.user_info?.name}</span></div>
+                    <div className="occ-customer-item"><Phone size={14}/> <span>{order.user_info?.phone}</span></div>
+                    <div className="occ-customer-item"><Mail size={14}/> <span>{order.user_info?.email}</span></div>
+                </div>
 
-            <StatusStepper status={order.status} />
-
-
-            <button className="order-expand-btn" onClick={() => setExpanded(!expanded)}>
-                {expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                {expanded ? 'Hide items' : `View ${order.items.length} item(s)`}
-            </button>
+                {order.status !== 'REJECTED' && order.status !== 'CANCELLED' && (
+                    <div className="occ-stepper-container">
+                        <StatusStepper status={order.status} />
+                    </div>
+                )}
+            </div>
 
             {expanded && (
-                <div className="order-items-list">
+                <div className="occ-items">
+                    <div className="occ-items-header">Order Items</div>
                     {order.items.map((item) => (
-                        <div key={item.id} className="order-item-row">
-                            <span className="order-item-qty">{item.quantity}×</span>
-                            <span className="order-item-name">{item.menu_item_name}</span>
-                            <span className="order-item-price">Rs. {item.subtotal}</span>
+                        <div key={item.id} className="occ-item-row">
+                            <span className="occ-item-qty">{item.quantity}×</span>
+                            <span className="occ-item-name">{item.menu_item_name}</span>
+                            <span className="occ-item-price">Rs. {item.subtotal}</span>
                         </div>
                     ))}
                 </div>
             )}
 
-
-            {actions.length > 0 && (
-                <div className="order-actions">
-                    {actions.map(a => (
-                        <button
-                            key={a.next}
-                            className={`btn ${a.variant}`}
-                            onClick={() => handleAction(a.next)}
-                            disabled={updating}
-                        >
-                            {updating ? 'Updating...' : a.label}
-                        </button>
-                    ))}
-                </div>
-            )}
+            <div className="occ-bottom">
+                <button className="occ-expand" onClick={() => setExpanded(!expanded)}>
+                    {expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                    {order.items.length} item(s)
+                </button>
+                
+                {actions.length > 0 && (
+                    <div className="occ-actions">
+                        {actions.map(a => (
+                            <button
+                                key={a.next}
+                                className={`btn ${a.variant} occ-action-btn`}
+                                onClick={() => handleAction(a.next)}
+                                disabled={updating}
+                            >
+                                {updating ? 'Updating...' : a.label}
+                            </button>
+                        ))}
+                    </div>
+                )}
+            </div>
         </div>
     );
 };
@@ -157,10 +171,36 @@ const VendorOrders = () => {
 
     const handleRefresh = () => { setRefreshing(true); fetchOrders(); };
 
-    const filteredOrders = filter === 'ALL' ? orders : orders.filter(o => o.status === filter);
-    const pendingCount = orders.filter(o => o.status === 'PENDING').length;
+    const FILTER_TABS = [
+        { key: 'ALL', label: 'All' },
+        { key: 'PENDING_GROUP', label: 'Pending' },
+        { key: 'COMPLETED', label: 'Completed' },
+        { key: 'REJECTED_GROUP', label: 'Rejected / Cancelled' }
+    ];
+
+    const filteredOrders = orders.filter(o => {
+        if (filter === 'ALL') return true;
+        if (filter === 'PENDING_GROUP') return ['PENDING', 'ACCEPTED', 'PREPARING', 'READY'].includes(o.status);
+        if (filter === 'COMPLETED') return o.status === 'COMPLETED';
+        if (filter === 'REJECTED_GROUP') return ['REJECTED', 'CANCELLED'].includes(o.status);
+        return false;
+    });
+
+    const pendingCount = orders.filter(o => ['PENDING', 'ACCEPTED', 'PREPARING', 'READY'].includes(o.status)).length;
 
     if (loading) return <div className="loading-spinner" />;
+
+    const isToday = (dateString) => {
+        const d = new Date(dateString);
+        const now = new Date();
+        return d.getDate() === now.getDate() &&
+               d.getMonth() === now.getMonth() &&
+               d.getFullYear() === now.getFullYear();
+    };
+
+    const todaysSales = orders
+        .filter(o => o.status === 'COMPLETED' && isToday(o.created_at))
+        .reduce((sum, o) => sum + parseFloat(o.total_price), 0);
 
     return (
         <div className="dashboard-page">
@@ -176,15 +216,13 @@ const VendorOrders = () => {
             </header>
 
 
-            <div className="stats-grid" style={{ marginBottom: '1.5rem', gridTemplateColumns: 'repeat(6, 1fr)' }}>
+            <div className="stats-grid st-col-5" style={{ marginBottom: '1.5rem' }}>
                 {[
-                    { label: 'Total', value: orders.length, color: 'var(--text-color)' },
-                    { label: 'Pending', value: orders.filter(o => o.status === 'PENDING').length, color: '#D97706' },
-                    { label: 'Preparing', value: orders.filter(o => o.status === 'PREPARING').length, color: '#7C3AED' },
-                    { label: 'Accepted', value: orders.filter(o => o.status === 'ACCEPTED').length, color: '#059669' },
-                    { label: 'Ready', value: orders.filter(o => o.status === 'READY').length, color: '#0284C7' },
+                    { label: 'Total Orders', value: orders.length, color: 'var(--text-color)' },
+                    { label: 'Pending', value: pendingCount, color: '#D97706' },
                     { label: 'Completed', value: orders.filter(o => o.status === 'COMPLETED').length, color: '#10B981' },
-                    { label: 'Rejected', value: orders.filter(o => o.status === 'REJECTED').length, color: '#DC2626' },
+                    { label: 'Rejected', value: orders.filter(o => o.status === 'REJECTED' || o.status === 'CANCELLED').length, color: '#DC2626' },
+                    { label: 'Today\'s Sales', value: `Rs. ${todaysSales.toFixed(2)}`, color: '#0F172A' },
                 ].map((s, idx) => (
                     <div key={`${s.label}-${idx}`} className="stat-card">
                         <span className="stat-label">{s.label}</span>
@@ -195,14 +233,14 @@ const VendorOrders = () => {
 
 
             <div className="order-filters">
-                {['ALL', 'PENDING', 'ACCEPTED', 'PREPARING', 'READY', 'COMPLETED', 'REJECTED', 'CANCELLED'].map(f => (
+                {FILTER_TABS.map(f => (
                     <button
-                        key={f}
-                        className={`order-filter-btn ${filter === f ? 'active' : ''}`}
-                        onClick={() => setFilter(f)}
+                        key={f.key}
+                        className={`order-filter-btn ${filter === f.key ? 'active' : ''}`}
+                        onClick={() => setFilter(f.key)}
                     >
-                        {f === 'ALL' ? 'All' : STATUS_CONFIG[f]?.label || f}
-                        {f === 'PENDING' && pendingCount > 0 && (
+                        {f.label}
+                        {f.key === 'PENDING_GROUP' && pendingCount > 0 && (
                             <span className="filter-badge">{pendingCount}</span>
                         )}
                     </button>
@@ -213,7 +251,7 @@ const VendorOrders = () => {
             {filteredOrders.length === 0 ? (
                 <div className="orders-empty">
                     <ClipboardList size={56} strokeWidth={1.2} />
-                    <p>No {filter !== 'ALL' ? STATUS_CONFIG[filter]?.label.toLowerCase() : ''} orders yet.</p>
+                    <p>No orders found for this tab.</p>
                 </div>
             ) : (
                 <div className="orders-list">

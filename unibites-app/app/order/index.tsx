@@ -10,7 +10,7 @@ import {
     Alert,
     Modal,
 } from 'react-native';
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as SecureStore from 'expo-secure-store';
 import { getMyOrders, cancelOrder } from '../../services/orderService';
@@ -51,9 +51,21 @@ const OrderCard = ({ order, onCancel }: { order: any; onCancel: (id: number) => 
 
 
             <View style={styles.cardMeta}>
-                <View style={styles.metaItem}>
-                    <Ionicons name="calendar-outline" size={14} color="#94A3B8" />
-                    <Text style={styles.metaText}>{dateStr} · {timeStr}</Text>
+                <View style={{ gap: 6 }}>
+                    <View style={styles.metaItem}>
+                        <Ionicons name="calendar-outline" size={14} color="#94A3B8" />
+                        <Text style={styles.metaText}>{dateStr} · {timeStr}</Text>
+                    </View>
+                    <View style={styles.metaItem}>
+                        <Ionicons
+                            name={order.payment_method === 'ESEWA' ? 'card-outline' : 'cash-outline'}
+                            size={14}
+                            color={order.payment_method === 'ESEWA' ? '#059669' : '#94A3B8'}
+                        />
+                        <Text style={[styles.metaText, { color: order.payment_method === 'ESEWA' ? '#059669' : '#94A3B8', fontWeight: order.payment_method === 'ESEWA' ? '600' : '400' }]}>
+                            {order.payment_method === 'ESEWA' ? 'Paid via eSewa' : 'Cash on Arrival'}
+                        </Text>
+                    </View>
                 </View>
                 <Text style={styles.totalText}>Rs. {order.total_price}</Text>
             </View>
@@ -76,7 +88,7 @@ const OrderCard = ({ order, onCancel }: { order: any; onCancel: (id: number) => 
                 </View>
             )}
 
-            {order.status === 'PENDING' && (
+            {order.status === 'PENDING' && order.payment_method !== 'ESEWA' && (
                 <TouchableOpacity
                     style={styles.cancelBtn}
                     onPress={() => {
@@ -99,9 +111,11 @@ const OrderCard = ({ order, onCancel }: { order: any; onCancel: (id: number) => 
 };
 
 export default function OrdersScreen() {
+    const router = useRouter();
     const [orders, setOrders] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+    const [activeTab, setActiveTab] = useState<'active' | 'history'>('active');
 
     const [ratingOrder, setRatingOrder] = useState<any>(null);
     const [hasRated, setHasRated] = useState(false);
@@ -170,27 +184,80 @@ export default function OrdersScreen() {
         );
     }
 
+    const activeOrders = orders.filter(o => ['PENDING', 'ACCEPTED', 'PREPARING', 'READY'].includes(o.status));
+    const historyOrders = orders.filter(o => ['COMPLETED', 'REJECTED', 'CANCELLED'].includes(o.status));
+    const displayOrders = activeTab === 'active' ? activeOrders : historyOrders;
+
+    const renderHeader = () => (
+        <View style={styles.headerSection}>
+            <View style={styles.headerTop}>
+                <Text style={styles.headerTitle}>My Orders</Text>
+                <Text style={styles.headerSubtitle}>Track and manage your orders</Text>
+
+                <View style={styles.statsContainer}>
+                    <View style={styles.statBox}>
+                        <Text style={styles.statValue}>{activeOrders.length}</Text>
+                        <Text style={styles.statLabel}>Active</Text>
+                    </View>
+                    <View style={styles.statDivider} />
+                    <View style={styles.statBox}>
+                        <Text style={styles.statValue}>{orders.filter(o => o.status === 'COMPLETED').length}</Text>
+                        <Text style={styles.statLabel}>Completed</Text>
+                    </View>
+                    <View style={styles.statDivider} />
+                    <View style={styles.statBox}>
+                        <Text style={styles.statValue}>{orders.length}</Text>
+                        <Text style={styles.statLabel}>Total</Text>
+                    </View>
+                </View>
+            </View>
+
+            <View style={styles.tabContainer}>
+                <TouchableOpacity
+                    style={[styles.tab, activeTab === 'active' && styles.activeTab]}
+                    onPress={() => setActiveTab('active')}
+                >
+                    <Ionicons name="time-outline" size={16} color={activeTab === 'active' ? '#1E293B' : '#64748B'} />
+                    <Text style={[styles.tabText, activeTab === 'active' && styles.activeTabText]}>Active Orders</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                    style={[styles.tab, activeTab === 'history' && styles.activeTab]}
+                    onPress={() => setActiveTab('history')}
+                >
+                    <Ionicons name="documents-outline" size={16} color={activeTab === 'history' ? '#1E293B' : '#64748B'} />
+                    <Text style={[styles.tabText, activeTab === 'history' && styles.activeTabText]}>History</Text>
+                </TouchableOpacity>
+            </View>
+        </View>
+    );
+
     return (
         <View style={styles.container}>
             <FlatList
-                data={orders}
+                data={displayOrders}
                 keyExtractor={(item) => item.id.toString()}
                 renderItem={({ item }) => (
                     <OrderCard order={item} onCancel={handleCancel} />
                 )}
                 contentContainerStyle={styles.listContent}
                 refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-                ListHeaderComponent={
-                    <View style={styles.headerContainer}>
-                        <Text style={styles.headerTitle}>My Orders</Text>
-                        <Text style={styles.headerSubtitle}>Track your order history</Text>
-                    </View>
-                }
+                ListHeaderComponent={renderHeader}
                 ListEmptyComponent={
                     <View style={styles.emptyState}>
-                        <Ionicons name="receipt-outline" size={64} color="#CBD5E1" />
-                        <Text style={styles.emptyTitle}>No orders yet</Text>
-                        <Text style={styles.emptySubtitle}>Your past orders will appear here.</Text>
+                        <Ionicons name="cart-outline" size={64} color="#1E293B" style={{ marginBottom: 12 }} />
+                        <Text style={styles.emptyTitle}>
+                            {activeTab === 'active' ? 'No Active Orders' : 'No Order History'}
+                        </Text>
+                        <Text style={styles.emptySubtitle}>
+                            {activeTab === 'active'
+                                ? 'Your active orders will appear here'
+                                : 'Your past orders will appear here.'}
+                        </Text>
+                        <TouchableOpacity style={styles.browseBtn} onPress={() => router.push('/home')}>
+                            <Text style={styles.browseBtnText}>Browse Canteens</Text>
+                            <Ionicons name="fast-food" size={16} color="#fff" />
+                        </TouchableOpacity>
                     </View>
                 }
             />
@@ -262,26 +329,91 @@ const styles = StyleSheet.create({
         backgroundColor: "#F3F4F6",
     },
 
-    headerContainer: {
-        paddingTop: 70,
-        paddingBottom: 30,
-        paddingHorizontal: 24,
-        backgroundColor: "#1E293B",
-        borderBottomLeftRadius: 24,
-        borderBottomRightRadius: 24,
+    headerSection: {
+        backgroundColor: "#fff",
         marginBottom: 8,
     },
 
+    headerTop: {
+        backgroundColor: "#1E293B",
+        paddingTop: 65,
+        paddingBottom: 24,
+        paddingHorizontal: 20,
+    },
+
     headerTitle: {
-        fontSize: 28,
+        fontSize: 26,
         fontWeight: "bold",
         color: "#fff",
     },
 
     headerSubtitle: {
-        fontSize: 14,
-        color: "#94A3B8",
+        fontSize: 13,
+        color: "#E2E8F0",
         marginTop: 4,
+        marginBottom: 20,
+    },
+
+    statsContainer: {
+        flexDirection: 'row',
+        backgroundColor: 'rgba(255, 255, 255, 0.25)',
+        borderRadius: 12,
+        padding: 12,
+        alignItems: 'center',
+    },
+
+    statBox: {
+        flex: 1,
+        alignItems: 'center',
+    },
+
+    statValue: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: '#fff',
+    },
+
+    statLabel: {
+        fontSize: 11,
+        color: '#F8FAFC',
+        marginTop: 2,
+        fontWeight: '500',
+    },
+
+    statDivider: {
+        width: 1,
+        height: 24,
+        backgroundColor: 'rgba(255, 255, 255, 0.4)',
+    },
+
+    tabContainer: {
+        flexDirection: 'row',
+        borderBottomWidth: 1,
+        borderBottomColor: '#E2E8F0',
+    },
+
+    tab: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 14,
+        gap: 6,
+    },
+
+    activeTab: {
+        borderBottomWidth: 2,
+        borderBottomColor: '#223b6b',
+    },
+
+    tabText: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#64748B',
+    },
+
+    activeTabText: {
+        color: '#223b6b',
     },
 
     listContent: {
@@ -410,15 +542,31 @@ const styles = StyleSheet.create({
 
     emptyTitle: {
         fontSize: 20,
-        fontWeight: "700",
-        color: "#94A3B8",
-        marginTop: 16,
+        fontWeight: "800",
+        color: "#0F172A",
     },
 
     emptySubtitle: {
         fontSize: 14,
-        color: "#CBD5E1",
+        color: "#94A3B8",
         marginTop: 6,
+        marginBottom: 24,
+    },
+
+    browseBtn: {
+        backgroundColor: "#0F172A",
+        paddingHorizontal: 24,
+        paddingVertical: 12,
+        borderRadius: 12,
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 8,
+    },
+
+    browseBtnText: {
+        color: "#fff",
+        fontWeight: "700",
+        fontSize: 15,
     },
 
     cancelBtn: {

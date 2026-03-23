@@ -1,25 +1,25 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View,
     Text,
     StyleSheet,
-    FlatList,
     Image,
     TouchableOpacity,
     ActivityIndicator,
     Alert,
     ScrollView,
 } from 'react-native';
-import { useRouter, useFocusEffect } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { getCart } from '../../services/cartService';
-import { placeOrder } from '../../services/orderService';
+import { placeOrder, initiateEsewaPayment } from '../../services/orderService';
 
 const CheckoutScreen = () => {
     const router = useRouter();
     const [cart, setCart] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [placing, setPlacing] = useState(false);
+    const [paymentMethod, setPaymentMethod] = useState<'CASH_ON_ARRIVAL' | 'ESEWA'>('CASH_ON_ARRIVAL');
 
     const fetchCart = async () => {
         try {
@@ -45,14 +45,34 @@ const CheckoutScreen = () => {
 
         setPlacing(true);
         try {
-            const order = await placeOrder();
-            router.replace({ pathname: '/order-success' as any, params: { orderId: order.id } });
+            if (paymentMethod === 'ESEWA') {
+                await handleEsewaPayment();
+            } else {
+                const order = await placeOrder();
+                router.replace({ pathname: '/order-success' as any, params: { orderId: order.id } });
+            }
         } catch (error: any) {
             const message = error?.response?.data?.error || 'Failed to place order. Please try again.';
             Alert.alert('Order Failed', message);
         } finally {
             setPlacing(false);
         }
+    };
+
+    const handleEsewaPayment = async () => {
+        // Asks backend to create order & get eSewa form params
+        const res = await initiateEsewaPayment();
+        const { esewa_url, form_params, order_id } = res;
+
+        // Navigates to our custom WebView screen via exporouter
+        router.push({
+            pathname: '/esewa-payment',
+            params: {
+                url: esewa_url,
+                form_params: JSON.stringify(form_params),
+                order_id: order_id
+            }
+        });
     };
 
     if (loading) {
@@ -121,16 +141,42 @@ const CheckoutScreen = () => {
 
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>Payment Method</Text>
-                    <View style={styles.paymentCard}>
+
+                    {/* Cash on Arrival Option */}
+                    <TouchableOpacity
+                        style={[styles.paymentCard, paymentMethod === 'CASH_ON_ARRIVAL' && styles.paymentCardSelected]}
+                        onPress={() => setPaymentMethod('CASH_ON_ARRIVAL')}
+                        activeOpacity={0.8}
+                    >
                         <View style={styles.paymentIcon}>
                             <Ionicons name="cash-outline" size={24} color="#E85D3A" />
                         </View>
                         <View style={styles.paymentInfo}>
                             <Text style={styles.paymentTitle}>Cash on Arrival</Text>
-                            <Text style={styles.paymentDesc}>Pay to the canteen when you pick up your order</Text>
+                            <Text style={styles.paymentDesc}>Pay at the canteen when you pick up</Text>
                         </View>
-                        <Ionicons name="checkmark-circle" size={22} color="#10B981" />
-                    </View>
+                        {paymentMethod === 'CASH_ON_ARRIVAL' && (
+                            <Ionicons name="checkmark-circle" size={22} color="#10B981" />
+                        )}
+                    </TouchableOpacity>
+
+                    {/* eSewa Option */}
+                    <TouchableOpacity
+                        style={[styles.paymentCard, styles.esewaCard, paymentMethod === 'ESEWA' && styles.paymentCardSelected, { marginTop: 10 }]}
+                        onPress={() => setPaymentMethod('ESEWA')}
+                        activeOpacity={0.8}
+                    >
+                        <View style={[styles.paymentIcon, { backgroundColor: '#f0fff4' }]}>
+                            <Text style={styles.esewaLogo}>e</Text>
+                        </View>
+                        <View style={styles.paymentInfo}>
+                            <Text style={styles.paymentTitle}>eSewa</Text>
+                            <Text style={styles.paymentDesc}>Pay instantly with your eSewa wallet</Text>
+                        </View>
+                        {paymentMethod === 'ESEWA' && (
+                            <Ionicons name="checkmark-circle" size={22} color="#10B981" />
+                        )}
+                    </TouchableOpacity>
                 </View>
             </ScrollView>
 
@@ -150,8 +196,15 @@ const CheckoutScreen = () => {
                         <ActivityIndicator color="#fff" size="small" />
                     ) : (
                         <>
-                            <Text style={styles.confirmText}>Confirm Order</Text>
-                            <Ionicons name="checkmark-circle-outline" size={22} color="#fff" style={{ marginLeft: 8 }} />
+                            <Text style={styles.confirmText}>
+                                {paymentMethod === 'ESEWA' ? 'Pay with eSewa' : 'Confirm Order'}
+                            </Text>
+                            <Ionicons
+                                name={paymentMethod === 'ESEWA' ? 'phone-portrait-outline' : 'checkmark-circle-outline'}
+                                size={22}
+                                color="#fff"
+                                style={{ marginLeft: 8 }}
+                            />
                         </>
                     )}
                 </TouchableOpacity>
@@ -396,6 +449,23 @@ const styles = StyleSheet.create({
         color: "#fff",
         fontSize: 18,
         fontWeight: "bold",
+    },
+
+    paymentCardSelected: {
+        borderColor: "#10B981",
+        borderWidth: 2,
+        backgroundColor: "#F0FDF4",
+    },
+
+    esewaCard: {
+        borderColor: "#60C271",
+    },
+
+    esewaLogo: {
+        fontSize: 22,
+        fontWeight: '900',
+        color: '#60C271',
+        fontStyle: 'italic',
     },
 });
 

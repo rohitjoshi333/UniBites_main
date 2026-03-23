@@ -158,3 +158,8 @@ cloudinary.config(
     api_secret='itvn3iU3QKfGiTilJjFU9qHqIBw',
     secure=True,
 )
+
+# eSewa Payment Gateway (Sandbox environment / UAT) for production we will change the credentials
+ESEWA_PRODUCT_CODE = os.environ.get('ESEWA_PRODUCT_CODE', 'EPAYTEST')
+ESEWA_SECRET_KEY = os.environ.get('ESEWA_SECRET_KEY', '8gBm/:&EnhH.1/q')
+ESEWA_PAYMENT_URL = os.environ.get('ESEWA_PAYMENT_URL', 'https://rc-epay.esewa.com.np/api/epay/main/v2/form')

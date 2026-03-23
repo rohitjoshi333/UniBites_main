@@ -49,10 +49,21 @@ class Order(models.Model):
         CANCELLED = 'CANCELLED', 'Cancelled'
         COMPLETED = 'COMPLETED', 'Completed'
 
+    class PaymentStatus(models.TextChoices):
+        PENDING_PAYMENT = 'PENDING_PAYMENT', 'Pending Payment'
+        PAID = 'PAID', 'Paid'
+        FAILED = 'FAILED', 'Payment Failed'
+
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='orders')
     canteen = models.ForeignKey(Canteen, on_delete=models.CASCADE, related_name='orders')
     total_price = models.DecimalField(max_digits=10, decimal_places=2)
     payment_method = models.CharField(max_length=50, default='CASH_ON_ARRIVAL')
+    payment_status = models.CharField(
+        max_length=30,
+        choices=PaymentStatus.choices,
+        default=PaymentStatus.PENDING_PAYMENT,
+    )
+    payment_ref_id = models.CharField(max_length=255, blank=True, null=True)  # eSewa transaction_uuid
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
     created_at = models.DateTimeField(auto_now_add=True)
 

@@ -338,12 +338,12 @@ const styles = StyleSheet.create({
         backgroundColor: '#F7F7F7',
     },
     header: {
-        backgroundColor: '#7a8fef',
+        backgroundColor: '#1E293B',
         paddingTop: 90,
         paddingBottom: 30,
         alignItems: 'center',
-        borderBottomLeftRadius: 80,
-        borderBottomRightRadius: 80,
+        borderBottomLeftRadius: 60,
+        borderBottomRightRadius: 60,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.05,
@@ -389,12 +389,12 @@ const styles = StyleSheet.create({
     name: {
         fontSize: 22,
         fontWeight: 'bold',
-        color: '#1A1A1A',
+        color: '#ffffffff',
         marginBottom: 4,
     },
     email: {
         fontSize: 14,
-        color: '#666',
+        color: '#ffffffff',
         marginBottom: 12,
     },
     badge: {
@@ -403,15 +403,15 @@ const styles = StyleSheet.create({
         borderRadius: 12,
     },
     verified: {
-        backgroundColor: '#DEF7EC',
+        backgroundColor: '#aeffdcff',
     },
     unverified: {
-        backgroundColor: '#FDE8E8',
+        backgroundColor: '#ffc0c0ff',
     },
     badgeText: {
         fontSize: 12,
         fontWeight: '600',
-        color: '#03543F',
+        color: '#012e22ff',
     },
     card: {
         backgroundColor: '#fff',

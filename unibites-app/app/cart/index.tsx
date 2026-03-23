@@ -214,8 +214,8 @@ const CartScreen = () => {
                         <Text style={styles.footerValue}>Rs. {calculateTotal()}</Text>
                     </View>
 
-                    <TouchableOpacity 
-                        style={styles.checkoutBtn} 
+                    <TouchableOpacity
+                        style={styles.checkoutBtn}
                         onPress={() => router.push('/checkout')}
                     >
                         <Text style={styles.checkoutText}>Checkout Now</Text>

@@ -59,6 +59,8 @@ export default function Layout() {
             <Tabs.Screen name="menu/[canteenId]" options={{ href: null, tabBarStyle: { display: "none" } }} />
             <Tabs.Screen name="checkout/index" options={{ href: null, tabBarStyle: { display: "none" } }} />
             <Tabs.Screen name="order-success/index" options={{ href: null, tabBarStyle: { display: "none" } }} />
+            <Tabs.Screen name="esewa-payment" options={{ href: null, tabBarStyle: { display: "none" } }} />
+            <Tabs.Screen name="payment-success" options={{ href: null, tabBarStyle: { display: "none" } }} />
         </Tabs>
     );
 }

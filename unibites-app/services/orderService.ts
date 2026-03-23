@@ -28,3 +28,8 @@ export const cancelOrder = async (orderId: number) => {
     const response = await api.patch(`orders/${orderId}/cancel/`);
     return response.data;
 };
+
+export const initiateEsewaPayment = async () => {
+    const response = await api.post('orders/esewa/initiate/');
+    return response.data;
+};
