@@ -13,7 +13,7 @@ import {
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as SecureStore from 'expo-secure-store';
-import { getMyOrders, cancelOrder } from '../../services/orderService';
+import { getMyOrders, cancelOrder, rateOrder } from '../../services/orderService';
 
 const STATUS_CONFIG: Record<string, { color: string; bg: string; icon: any }> = {
     PENDING: { color: '#D97706', bg: '#FEF3C7', icon: 'time-outline' },
@@ -119,6 +119,7 @@ export default function OrdersScreen() {
 
     const [ratingOrder, setRatingOrder] = useState<any>(null);
     const [hasRated, setHasRated] = useState(false);
+    const [selectedRating, setSelectedRating] = useState(0);
     const [dismissedRatings, setDismissedRatings] = useState<Set<number>>(new Set());
 
     const fetchOrders = async () => {
@@ -137,10 +138,11 @@ export default function OrdersScreen() {
                 }
             } catch (e) { console.log('Error reading secure store'); }
 
-            const unrated = data.find((o: any) => o.status === 'COMPLETED' && !storedDismissed.has(o.id));
+            const unrated = data.find((o: any) => o.status === 'COMPLETED' && !o.is_rated && !storedDismissed.has(o.id));
             if (unrated && !ratingOrder) {
                 setRatingOrder(unrated);
                 setHasRated(false);
+                setSelectedRating(0);
             }
         } catch (e) {
             console.error('Failed to fetch orders', e);
@@ -174,6 +176,28 @@ export default function OrdersScreen() {
         }
         setRatingOrder(null);
         setHasRated(false);
+        setSelectedRating(0);
+    };
+
+    const handleRateSubmit = async () => {
+        if (selectedRating === 0) {
+            Alert.alert("Rating Required", "Please select a star rating first.");
+            return;
+        }
+        if (ratingOrder) {
+            try {
+                await rateOrder(ratingOrder.id, selectedRating);
+                setHasRated(true);
+                const newDismissed = new Set(dismissedRatings).add(ratingOrder.id);
+                setDismissedRatings(newDismissed);
+                await SecureStore.setItemAsync('dismissedRatings', JSON.stringify(Array.from(newDismissed)));
+                // update local state to reflect that the order was rated
+                setOrders(prev => prev.map(o => o.id === ratingOrder.id ? { ...o, is_rated: true } : o));
+            } catch (e) {
+                console.error('Failed to rate order', e);
+                Alert.alert('Error', 'Could not save your rating. Please try again.');
+            }
+        }
     };
 
     if (loading) {
@@ -275,14 +299,21 @@ export default function OrdersScreen() {
 
                                 <View style={styles.dummyStarsContainer}>
                                     {[1, 2, 3, 4, 5].map(i => (
-                                        <Ionicons key={i} name="star-outline" size={32} color="#CBD5E1" style={styles.dummyStar} />
+                                        <TouchableOpacity key={i} onPress={() => setSelectedRating(i)}>
+                                            <Ionicons
+                                                name={i <= selectedRating ? "star" : "star-outline"}
+                                                size={32}
+                                                color={i <= selectedRating ? "#F5A623" : "#CBD5E1"}
+                                                style={styles.dummyStar}
+                                            />
+                                        </TouchableOpacity>
                                     ))}
                                 </View>
 
                                 <TouchableOpacity
                                     style={styles.premiumRateBtn}
                                     activeOpacity={0.8}
-                                    onPress={() => setHasRated(true)}
+                                    onPress={handleRateSubmit}
                                 >
                                     <Text style={styles.premiumRateBtnText}>Rate Experience</Text>
                                 </TouchableOpacity>

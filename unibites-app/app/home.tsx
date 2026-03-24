@@ -100,6 +100,7 @@ export default function HomeScreen() {
               canteenId: canteen.id,
               canteenName: canteen.name,
               canteenImage: canteen.image_url || '',
+              canteenRating: canteen.rating,
             }
           })}
         >
@@ -123,7 +124,7 @@ export default function HomeScreen() {
             <View style={styles.rightInfo}>
               <View style={styles.ratingRow}>
                 <FontAwesome name="star" size={14} color="#F5A623" />
-                <Text style={styles.ratingText}>{canteen.rating}</Text>
+                <Text style={styles.ratingText}>{Number(canteen.rating || 0).toFixed(1)}</Text>
               </View>
 
               <View style={styles.itemBadge}>

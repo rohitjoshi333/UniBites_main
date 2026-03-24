@@ -163,6 +163,46 @@ class CancelOrderView(APIView):
         return Response(serializer.data)
 
 
+class RateOrderView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk):
+        order = get_object_or_404(Order, pk=pk)
+
+        if order.user != request.user:
+            return Response({"error": "You do not have permission to rate this order."}, status=403)
+
+        if order.status != Order.Status.COMPLETED:
+            return Response({"error": "You can only rate completed orders."}, status=400)
+
+        if order.is_rated:
+            return Response({"error": "This order has already been rated."}, status=400)
+
+        rating = request.data.get('rating')
+        if not rating:
+            return Response({"error": "Rating is required."}, status=400)
+
+        try:
+            rating = int(rating)
+            if rating < 1 or rating > 5:
+                raise ValueError
+        except ValueError:
+            return Response({"error": "Rating must be an integer between 1 and 5."}, status=400)
+
+        from accounts.models import Review
+        Review.objects.create(
+            user=request.user,
+            canteen=order.canteen,
+            order=order,
+            rating=rating
+        )
+
+        order.is_rated = True
+        order.save(update_fields=['is_rated'])
+
+        return Response({"message": "Rating submitted successfully.", "rating": rating}, status=status.HTTP_201_CREATED)
+
+
 class VendorOrdersView(APIView):
     permission_classes = [IsAuthenticated]
 

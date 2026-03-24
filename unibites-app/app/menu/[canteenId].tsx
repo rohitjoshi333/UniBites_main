@@ -34,7 +34,7 @@ type CartItem = {
 };
 
 export default function MenuScreen() {
-    const { canteenId, canteenName, canteenImage } = useLocalSearchParams<{ canteenId: string; canteenName: string; canteenImage?: string }>();
+    const { canteenId, canteenName, canteenImage, canteenRating } = useLocalSearchParams<{ canteenId: string; canteenName: string; canteenImage?: string; canteenRating?: string }>();
     const [items, setItems] = useState<MenuItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -176,6 +176,12 @@ export default function MenuScreen() {
                         <View style={styles.overlay} />
                         <View style={styles.bannerContent}>
                             <Text style={styles.bannerTitle}>{canteenName || "Canteen"}</Text>
+                            {canteenRating && (
+                                <View style={styles.ratingBadge}>
+                                    <Ionicons name="star" size={14} color="#F5A623" />
+                                    <Text style={styles.ratingBadgeText}>{Number(canteenRating || 0).toFixed(1)}</Text>
+                                </View>
+                            )}
                         </View>
                         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
                             <Ionicons name="arrow-back" size={24} color="white" />
@@ -353,6 +359,21 @@ const styles = StyleSheet.create({
         color: 'white',
         fontSize: 24,
         fontWeight: 'bold',
+    },
+    ratingBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 20,
+        marginTop: 8,
+        gap: 6,
+    },
+    ratingBadgeText: {
+        color: '#FFFFFF',
+        fontWeight: '700',
+        fontSize: 14,
     },
     backButton: {
         position: 'absolute',

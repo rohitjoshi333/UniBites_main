@@ -33,3 +33,8 @@ export const initiateEsewaPayment = async () => {
     const response = await api.post('orders/esewa/initiate/');
     return response.data;
 };
+
+export const rateOrder = async (orderId: number, rating: number) => {
+    const response = await api.post(`orders/${orderId}/rate/`, { rating });
+    return response.data;
+};

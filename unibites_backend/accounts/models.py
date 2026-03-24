@@ -60,11 +60,10 @@ class Canteen(models.Model):
     location = models.CharField(max_length=255)
     opening_time = models.CharField(max_length=50)
     closing_time = models.CharField(max_length=50)
-    rating = models.DecimalField(max_digits=2, decimal_places=1, default=4.0)
+    rating = models.DecimalField(max_digits=2, decimal_places=1, default=0.0)
     total_items = models.PositiveIntegerField(default=0)
     image_url = models.URLField(blank=True, null=True)
 
-    # later vendors will be linked
     vendor = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
@@ -77,3 +76,22 @@ class Canteen(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class Review(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='reviews')
+    canteen = models.ForeignKey(Canteen, on_delete=models.CASCADE, related_name='reviews')
+    order = models.OneToOneField('orders.Order', on_delete=models.CASCADE, related_name='review')
+    rating = models.IntegerField(choices=[(i, i) for i in range(1, 6)])
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        reviews = self.canteen.reviews.all()
+        if reviews.exists():
+            avg = sum(r.rating for r in reviews) / reviews.count()
+            self.canteen.rating = round(avg, 1)
+            self.canteen.save(update_fields=['rating'])
+
+    def __str__(self):
+        return f"{self.user.full_name} - {self.canteen.name} ({self.rating}★)"

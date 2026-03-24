@@ -11,6 +11,7 @@ from .views import (
     VendorOrderStatusView,
     EsewaInitiateView,
     EsewaVerifyView,
+    RateOrderView,
 )
 
 
@@ -26,6 +27,7 @@ order_urlpatterns = [
     path('place/', PlaceOrderView.as_view()),
     path('my-orders/', MyOrdersView.as_view()),
     path('<int:pk>/cancel/', CancelOrderView.as_view()),
+    path('<int:pk>/rate/', RateOrderView.as_view()),
     path('esewa/initiate/', EsewaInitiateView.as_view()),
     path('esewa/verify/', EsewaVerifyView.as_view()),
 ]

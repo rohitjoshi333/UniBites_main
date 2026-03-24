@@ -65,6 +65,7 @@ class Order(models.Model):
     )
     payment_ref_id = models.CharField(max_length=255, blank=True, null=True)  # eSewa transaction_uuid
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
+    is_rated = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
