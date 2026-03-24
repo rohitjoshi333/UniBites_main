@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { View, Text, TextInput, Alert, StyleSheet, TouchableOpacity } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, router } from "expo-router";
 import { API_BASE_URL } from "../constants/api";
 
@@ -39,11 +40,14 @@ export default function ResetPasswordScreen() {
 
   return (
     <View style={styles.container}>
+      <TouchableOpacity style={styles.backButton} onPress={() => router.replace("/")}>
+        <Ionicons name="arrow-back" size={24} color="#333" />
+      </TouchableOpacity>
       <Text style={styles.title}>Reset Password</Text>
 
-      <TextInput style={styles.input} placeholder="OTP" value={otp} onChangeText={setOtp} />
-      <TextInput style={styles.input} placeholder="New Password" secureTextEntry value={password} onChangeText={setPassword} />
-      <TextInput style={styles.input} placeholder="Confirm Password" secureTextEntry value={password2} onChangeText={setPassword2} />
+      <TextInput style={styles.input} placeholder="OTP" placeholderTextColor="#999" value={otp} onChangeText={setOtp} />
+      <TextInput style={styles.input} placeholder="New Password" placeholderTextColor="#999" secureTextEntry value={password} onChangeText={setPassword} />
+      <TextInput style={styles.input} placeholder="Confirm Password" placeholderTextColor="#999" secureTextEntry value={password2} onChangeText={setPassword2} />
 
       <TouchableOpacity style={styles.btn} onPress={handleReset}>
         <Text style={styles.btnText}>Reset Password</Text>
@@ -54,37 +58,47 @@ export default function ResetPasswordScreen() {
 
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    justifyContent: "center", 
-    padding: 24 
-},
+  container: {
+    flex: 1,
+    justifyContent: "center",
+    padding: 24,
+    backgroundColor: "#fff"
+  },
+  backButton: {
+    position: "absolute",
+    top: 50,
+    left: 20,
+    zIndex: 1,
+  },
 
-  title: { 
-    fontSize: 22, 
-    fontWeight: "600", 
-    marginBottom: 16, 
-    textAlign: "center" 
-},
+  title: {
+    fontSize: 22,
+    fontWeight: "600",
+    marginBottom: 16,
+    textAlign: "center",
+    color: "#333"
+  },
 
-  input: { 
-    borderWidth: 1, 
-    borderColor: "#ccc", 
-    padding: 12, 
-    borderRadius: 8, 
-    marginBottom: 12 
+  input: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 12,
+    color: "#333",
+    backgroundColor: "#fff",
 
   },
 
-  btn: { 
-    backgroundColor: "#2E3566", 
-    padding: 14, 
-    borderRadius: 10 
-},
+  btn: {
+    backgroundColor: "#2E3566",
+    padding: 14,
+    borderRadius: 10
+  },
 
-  btnText: { 
-    color: "#fff", 
-    textAlign: "center", 
-    fontWeight: "600" 
-},
+  btnText: {
+    color: "#fff",
+    textAlign: "center",
+    fontWeight: "600"
+  },
 });

@@ -7,7 +7,6 @@ import {
     TouchableOpacity,
     Alert,
     ActivityIndicator,
-    ScrollView,
     TextInput,
     Modal,
     KeyboardAvoidingView,
@@ -162,7 +161,7 @@ export default function ProfileScreen() {
     }
 
     return (
-        <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 40 }}>
+        <View style={styles.container}>
             {/* Header Section */}
             <View style={styles.header}>
                 <TouchableOpacity onPress={handlePickImage} disabled={uploading} style={styles.avatarWrapper}>
@@ -201,6 +200,7 @@ export default function ProfileScreen() {
                             style={styles.input}
                             value={editForm.full_name}
                             onChangeText={(text) => setEditForm({ ...editForm, full_name: text })}
+                            placeholderTextColor="#999"
                         />
                     ) : (
                         <Text style={styles.value}>{profile?.full_name}</Text>
@@ -218,6 +218,7 @@ export default function ProfileScreen() {
                             onChangeText={(text) => setEditForm({ ...editForm, phone: text })}
                             keyboardType="phone-pad"
                             maxLength={10}
+                            placeholderTextColor="#999"
                         />
                     ) : (
                         <Text style={styles.value}>{profile?.phone || "Not set"}</Text>
@@ -285,6 +286,7 @@ export default function ProfileScreen() {
                         <TextInput
                             style={styles.modalInput}
                             placeholder="Current Password"
+                            placeholderTextColor="#999"
                             secureTextEntry
                             value={pwdForm.old_password}
                             onChangeText={(t) => setPwdForm({ ...pwdForm, old_password: t })}
@@ -292,6 +294,7 @@ export default function ProfileScreen() {
                         <TextInput
                             style={styles.modalInput}
                             placeholder="New Password (min 8 chars)"
+                            placeholderTextColor="#999"
                             secureTextEntry
                             value={pwdForm.new_password}
                             onChangeText={(t) => setPwdForm({ ...pwdForm, new_password: t })}
@@ -299,6 +302,7 @@ export default function ProfileScreen() {
                         <TextInput
                             style={styles.modalInput}
                             placeholder="Confirm New Password"
+                            placeholderTextColor="#999"
                             secureTextEntry
                             value={pwdForm.confirm_password}
                             onChangeText={(t) => setPwdForm({ ...pwdForm, confirm_password: t })}
@@ -323,7 +327,7 @@ export default function ProfileScreen() {
                 </KeyboardAvoidingView>
             </Modal>
 
-        </ScrollView>
+        </View>
     );
 }
 
@@ -446,7 +450,8 @@ const styles = StyleSheet.create({
         flex: 2,
         textAlign: 'right',
         fontSize: 16,
-        color: '#2E3566',
+        color: '#333',
+        backgroundColor: '#fff',
         borderBottomWidth: 1,
         borderBottomColor: '#ddd',
         paddingBottom: 2,
@@ -461,6 +466,7 @@ const styles = StyleSheet.create({
     },
     btn: {
         paddingVertical: 14,
+        paddingHorizontal: 20,
         borderRadius: 12,
         alignItems: 'center',
         justifyContent: 'center',
@@ -537,6 +543,7 @@ const styles = StyleSheet.create({
     },
     modalInput: {
         backgroundColor: '#F7F7F7',
+        color: '#333',
         padding: 14,
         borderRadius: 12,
         marginBottom: 12,

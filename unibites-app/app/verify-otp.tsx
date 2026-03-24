@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   Image,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { API_BASE_URL } from "../constants/api";
 
@@ -80,6 +81,9 @@ export default function VerifyOtpScreen() {
 
   return (
     <View style={styles.screen}>
+      <TouchableOpacity style={styles.backButton} onPress={() => router.replace("/")}>
+        <Ionicons name="arrow-back" size={24} color="#333" />
+      </TouchableOpacity>
       <Image source={require("../assets/images/UniBites.png")} style={styles.logo} />
 
       <View style={styles.card}>
@@ -91,6 +95,7 @@ export default function VerifyOtpScreen() {
         <TextInput
           style={styles.input}
           placeholder="Enter OTP"
+          placeholderTextColor="#999"
           keyboardType="number-pad"
           maxLength={6}
           value={otp}
@@ -132,6 +137,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 40,
   },
+  backButton: {
+    position: "absolute",
+    top: 50,
+    left: 20,
+    zIndex: 1,
+  },
 
   logo: {
     width: 160,
@@ -172,7 +183,8 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 14,
     fontSize: 15,
-    backgroundColor: "#FAFAFC",
+    color: "#333",
+    backgroundColor: "#fff",
     textAlign: "center",
     letterSpacing: 4,
     marginBottom: 18,

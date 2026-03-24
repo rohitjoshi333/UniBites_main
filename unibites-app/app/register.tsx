@@ -101,6 +101,7 @@ export default function RegisterScreen() {
         <TextInput
           style={styles.input}
           placeholder="Full Name"
+          placeholderTextColor="#999"
           value={fullName}
           onChangeText={setFullName}
         />
@@ -108,6 +109,7 @@ export default function RegisterScreen() {
         <TextInput
           style={styles.input}
           placeholder="College Email"
+          placeholderTextColor="#999"
           value={email}
           onChangeText={setEmail}
           autoCapitalize="none"
@@ -119,6 +121,7 @@ export default function RegisterScreen() {
           <TextInput
             style={styles.phoneInput}
             placeholder="98XXXXXXXX"
+            placeholderTextColor="#999"
             keyboardType="number-pad"
             maxLength={10}
             value={phone}
@@ -129,6 +132,7 @@ export default function RegisterScreen() {
         <TextInput
           style={styles.input}
           placeholder="Password"
+          placeholderTextColor="#999"
           secureTextEntry
           value={password}
           onChangeText={setPassword}
@@ -137,6 +141,7 @@ export default function RegisterScreen() {
         <TextInput
           style={styles.input}
           placeholder="Confirm Password"
+          placeholderTextColor="#999"
           secureTextEntry
           value={confirmPassword}
           onChangeText={setConfirmPassword}
@@ -176,7 +181,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#FFFFFF",
     alignItems: "center",
-    paddingTop: 14,
+    paddingTop: 50,
   },
 
   logo: {
@@ -216,7 +221,8 @@ const styles = StyleSheet.create({
     paddingVertical: 13,
     paddingHorizontal: 14,
     fontSize: 14,
-    backgroundColor: "#FAFAFC",
+    color: "#333",
+    backgroundColor: "#fff",
   },
 
   phoneContainer: {
@@ -244,6 +250,8 @@ const styles = StyleSheet.create({
     paddingVertical: 13,
     paddingHorizontal: 14,
     fontSize: 14,
+    color: "#333",
+    backgroundColor: "#fff",
   },
 
   imageWrapper: {

@@ -158,12 +158,7 @@ export default function MenuScreen() {
                 }}
             />
             <View style={styles.container}>
-                <ScrollView
-                    contentContainerStyle={styles.scrollContent}
-                    refreshControl={
-                        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-                    }
-                >
+                <View style={styles.fixedHeader}>
                     <View style={styles.bannerContainer}>
                         <Image
                             source={
@@ -199,7 +194,14 @@ export default function MenuScreen() {
                             onChangeText={setSearchQuery}
                         />
                     </View>
+                </View>
 
+                <ScrollView
+                    contentContainerStyle={styles.scrollContent}
+                    refreshControl={
+                        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+                    }
+                >
                     <View style={styles.listContainer}>
                         {(() => {
                             const filteredItems = items.filter((item) => {
@@ -300,6 +302,9 @@ export default function MenuScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
+        backgroundColor: "#F9FAFB",
+    },
+    fixedHeader: {
         backgroundColor: "#F9FAFB",
     },
     scrollContent: {
@@ -418,6 +423,7 @@ const styles = StyleSheet.create({
         flex: 1,
         fontSize: 15,
         color: "#111827",
+        backgroundColor: "#fff",
         marginHorizontal: 8,
         paddingVertical: 0,
     },

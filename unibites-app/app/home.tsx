@@ -59,86 +59,93 @@ export default function HomeScreen() {
   };
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      <View style={styles.header}>
-        <Image
-          source={require("../assets/images/UniBites.png")}
-          style={styles.logo}
-        />
-        <Ionicons name="notifications-outline" size={24} color="#333" />
-      </View>
+    <View style={styles.container}>
+      <View style={styles.fixedContent}>
+        <View style={styles.header}>
+          <Image
+            source={require("../assets/images/UniBites.png")}
+            style={styles.logo}
+          />
+          <Ionicons name="notifications-outline" size={24} color="#333" />
+        </View>
 
-      <Text style={styles.welcomeText}>
-        Welcome, {fullName.toUpperCase()}
-      </Text>
-      <Text style={styles.subText}>
-        Fuel Your Campus, One Bite at a Time
-      </Text>
-
-      <View style={styles.banner}>
-        <Image
-          source={require("../assets/images/islingtoncanteen.jpg")}
-          style={styles.bannerImage}
-        />
-        <View style={styles.bannerOverlay} />
-        <Text style={styles.bannerText}>
-          Enjoy Best Khana set{"\n"}at Islington Canteen
+        <Text style={styles.welcomeText}>
+          Welcome, {fullName.toUpperCase()}
         </Text>
+        <Text style={styles.subText}>
+          Fuel Your Campus, One Bite at a Time
+        </Text>
+
+        <View style={styles.banner}>
+          <Image
+            source={require("../assets/images/islingtoncanteen.jpg")}
+            style={styles.bannerImage}
+          />
+          <View style={styles.bannerOverlay} />
+          <Text style={styles.bannerText}>
+            Enjoy Best Khana set{"\n"}at Islington Canteen
+          </Text>
+        </View>
+
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>All Canteens</Text>
+        </View>
       </View>
 
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>All Canteens</Text>
-      </View>
-
-      {canteens.map((canteen) => (
-        <TouchableOpacity
-          key={canteen.id}
-          activeOpacity={0.9}
-          onPress={() => router.push({
-            pathname: "/menu/[canteenId]",
-            params: {
-              canteenId: canteen.id,
-              canteenName: canteen.name,
-              canteenImage: canteen.image_url || '',
-              canteenRating: canteen.rating,
-            }
-          })}
-        >
-          <View style={styles.canteenCard}>
-            <Image
-              source={
-                canteen.image_url
-                  ? { uri: canteen.image_url }
-                  : require("../assets/images/UniBites.png")
+      <ScrollView
+        style={styles.scrollContainer}
+        showsVerticalScrollIndicator={false}
+      >
+        {canteens.map((canteen) => (
+          <TouchableOpacity
+            key={canteen.id}
+            activeOpacity={0.9}
+            onPress={() => router.push({
+              pathname: "/menu/[canteenId]",
+              params: {
+                canteenId: canteen.id,
+                canteenName: canteen.name,
+                canteenImage: canteen.image_url || '',
+                canteenRating: canteen.rating,
               }
-              style={styles.canteenThumb}
-            />
-            <View style={styles.canteenInfo}>
-              <Text style={styles.canteenName}>{canteen.name}</Text>
-              <Text style={styles.canteenSub}>{canteen.location}</Text>
-              <Text style={styles.canteenTime}>
-                {canteen.opening_time} - {canteen.closing_time}
-              </Text>
-            </View>
-
-            <View style={styles.rightInfo}>
-              <View style={styles.ratingRow}>
-                <FontAwesome name="star" size={14} color="#F5A623" />
-                <Text style={styles.ratingText}>{Number(canteen.rating || 0).toFixed(1)}</Text>
-              </View>
-
-              <View style={styles.itemBadge}>
-                <Text style={styles.itemText}>
-                  {canteen.total_items} items
+            })}
+          >
+            <View style={styles.canteenCard}>
+              <Image
+                source={
+                  canteen.image_url
+                    ? { uri: canteen.image_url }
+                    : require("../assets/images/UniBites.png")
+                }
+                style={styles.canteenThumb}
+              />
+              <View style={styles.canteenInfo}>
+                <Text style={styles.canteenName}>{canteen.name}</Text>
+                <Text style={styles.canteenSub}>{canteen.location}</Text>
+                <Text style={styles.canteenTime}>
+                  {canteen.opening_time} - {canteen.closing_time}
                 </Text>
               </View>
-            </View>
-          </View>
-        </TouchableOpacity>
-      ))}
 
-      <View style={{ height: 40 }} />
-    </ScrollView>
+              <View style={styles.rightInfo}>
+                <View style={styles.ratingRow}>
+                  <FontAwesome name="star" size={14} color="#F5A623" />
+                  <Text style={styles.ratingText}>{Number(canteen.rating || 0).toFixed(1)}</Text>
+                </View>
+
+                <View style={styles.itemBadge}>
+                  <Text style={styles.itemText}>
+                    {canteen.total_items} items
+                  </Text>
+                </View>
+              </View>
+            </View>
+          </TouchableOpacity>
+        ))}
+
+        <View style={{ height: 40 }} />
+      </ScrollView>
+    </View>
   );
 }
 
@@ -146,6 +153,15 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#fff",
+  },
+
+  fixedContent: {
+    paddingHorizontal: 25,
+    paddingBottom: 10,
+  },
+
+  scrollContainer: {
+    flex: 1,
     paddingHorizontal: 25,
   },
 

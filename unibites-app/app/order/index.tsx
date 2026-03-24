@@ -212,52 +212,51 @@ export default function OrdersScreen() {
     const historyOrders = orders.filter(o => ['COMPLETED', 'REJECTED', 'CANCELLED'].includes(o.status));
     const displayOrders = activeTab === 'active' ? activeOrders : historyOrders;
 
-    const renderHeader = () => (
-        <View style={styles.headerSection}>
-            <View style={styles.headerTop}>
-                <Text style={styles.headerTitle}>My Orders</Text>
-                <Text style={styles.headerSubtitle}>Track and manage your orders</Text>
-
-                <View style={styles.statsContainer}>
-                    <View style={styles.statBox}>
-                        <Text style={styles.statValue}>{activeOrders.length}</Text>
-                        <Text style={styles.statLabel}>Active</Text>
-                    </View>
-                    <View style={styles.statDivider} />
-                    <View style={styles.statBox}>
-                        <Text style={styles.statValue}>{orders.filter(o => o.status === 'COMPLETED').length}</Text>
-                        <Text style={styles.statLabel}>Completed</Text>
-                    </View>
-                    <View style={styles.statDivider} />
-                    <View style={styles.statBox}>
-                        <Text style={styles.statValue}>{orders.length}</Text>
-                        <Text style={styles.statLabel}>Total</Text>
-                    </View>
-                </View>
-            </View>
-
-            <View style={styles.tabContainer}>
-                <TouchableOpacity
-                    style={[styles.tab, activeTab === 'active' && styles.activeTab]}
-                    onPress={() => setActiveTab('active')}
-                >
-                    <Ionicons name="time-outline" size={16} color={activeTab === 'active' ? '#1E293B' : '#64748B'} />
-                    <Text style={[styles.tabText, activeTab === 'active' && styles.activeTabText]}>Active Orders</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                    style={[styles.tab, activeTab === 'history' && styles.activeTab]}
-                    onPress={() => setActiveTab('history')}
-                >
-                    <Ionicons name="documents-outline" size={16} color={activeTab === 'history' ? '#1E293B' : '#64748B'} />
-                    <Text style={[styles.tabText, activeTab === 'history' && styles.activeTabText]}>History</Text>
-                </TouchableOpacity>
-            </View>
-        </View>
-    );
 
     return (
         <View style={styles.container}>
+            <View style={styles.fixedHeader}>
+                <View style={styles.headerTop}>
+                    <Text style={styles.headerTitle}>My Orders</Text>
+                    <Text style={styles.headerSubtitle}>Track and manage your orders</Text>
+
+                    <View style={styles.statsContainer}>
+                        <View style={styles.statBox}>
+                            <Text style={styles.statValue}>{activeOrders.length}</Text>
+                            <Text style={styles.statLabel}>Active</Text>
+                        </View>
+                        <View style={styles.statDivider} />
+                        <View style={styles.statBox}>
+                            <Text style={styles.statValue}>{orders.filter(o => o.status === 'COMPLETED').length}</Text>
+                            <Text style={styles.statLabel}>Completed</Text>
+                        </View>
+                        <View style={styles.statDivider} />
+                        <View style={styles.statBox}>
+                            <Text style={styles.statValue}>{orders.length}</Text>
+                            <Text style={styles.statLabel}>Total</Text>
+                        </View>
+                    </View>
+                </View>
+
+                <View style={styles.tabContainer}>
+                    <TouchableOpacity
+                        style={[styles.tab, activeTab === 'active' && styles.activeTab]}
+                        onPress={() => setActiveTab('active')}
+                    >
+                        <Ionicons name="time-outline" size={16} color={activeTab === 'active' ? '#1E293B' : '#64748B'} />
+                        <Text style={[styles.tabText, activeTab === 'active' && styles.activeTabText]}>Active Orders</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={[styles.tab, activeTab === 'history' && styles.activeTab]}
+                        onPress={() => setActiveTab('history')}
+                    >
+                        <Ionicons name="documents-outline" size={16} color={activeTab === 'history' ? '#1E293B' : '#64748B'} />
+                        <Text style={[styles.tabText, activeTab === 'history' && styles.activeTabText]}>History</Text>
+                    </TouchableOpacity>
+                </View>
+            </View>
+
             <FlatList
                 data={displayOrders}
                 keyExtractor={(item) => item.id.toString()}
@@ -266,7 +265,6 @@ export default function OrdersScreen() {
                 )}
                 contentContainerStyle={styles.listContent}
                 refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-                ListHeaderComponent={renderHeader}
                 ListEmptyComponent={
                     <View style={styles.emptyState}>
                         <Ionicons name="cart-outline" size={64} color="#1E293B" style={{ marginBottom: 12 }} />
@@ -351,6 +349,9 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: "#F3F4F6",
+    },
+    fixedHeader: {
+        backgroundColor: "#fff",
     },
 
     center: {

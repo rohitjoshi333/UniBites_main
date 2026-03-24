@@ -112,42 +112,6 @@ const CartScreen = () => {
         );
     }
 
-    const renderHeader = () => (
-        <>
-            <View style={styles.headerContainer}>
-                <Text style={styles.headerTitle}>My Cart</Text>
-                <Text style={styles.headerSubtitle}>Review your items before checkout</Text>
-            </View>
-
-            {cart && cart.items && cart.items.length > 0 && (
-                <View style={styles.summaryCard}>
-                    <View style={styles.summaryRow}>
-                        <View style={styles.summaryItem}>
-                            <Text style={styles.summaryValue}>{cart.items.length}</Text>
-                            <Text style={styles.summaryLabel}>Items</Text>
-                        </View>
-                        <View style={styles.summaryDivider} />
-                        <View style={styles.summaryItem}>
-                            <Text style={styles.summaryValue}>{cart.items.reduce((acc: number, item: any) => acc + item.quantity, 0)}</Text>
-                            <Text style={styles.summaryLabel}>Quantity</Text>
-                        </View>
-                        <View style={styles.summaryDivider} />
-                        <View style={styles.summaryItem}>
-                            <Text style={[styles.summaryValue, { fontSize: 18 }]}>Rs. {cart.total_price}</Text>
-                            <Text style={styles.summaryLabel}>Total</Text>
-                        </View>
-                    </View>
-                </View>
-            )}
-
-            {cart && cart.items && cart.items.length > 0 && (
-                <TouchableOpacity style={styles.clearButton} onPress={handleClearCart}>
-                    <Ionicons name="trash-outline" size={18} color="#E85D3A" style={{ marginRight: 6 }} />
-                    <Text style={styles.clearButtonText}>Clear All Items</Text>
-                </TouchableOpacity>
-            )}
-        </>
-    );
 
     const renderItem = ({ item }: { item: any }) => (
         <View style={styles.card}>
@@ -189,13 +153,47 @@ const CartScreen = () => {
 
     return (
         <View style={styles.container}>
+            <View style={styles.fixedHeader}>
+                <View style={styles.headerContainer}>
+                    <Text style={styles.headerTitle}>My Cart</Text>
+                    <Text style={styles.headerSubtitle}>Review your items before checkout</Text>
+                </View>
+
+                {cart && cart.items && cart.items.length > 0 && (
+                    <View style={styles.summaryCard}>
+                        <View style={styles.summaryRow}>
+                            <View style={styles.summaryItem}>
+                                <Text style={styles.summaryValue}>{cart.items.length}</Text>
+                                <Text style={styles.summaryLabel}>Items</Text>
+                            </View>
+                            <View style={styles.summaryDivider} />
+                            <View style={styles.summaryItem}>
+                                <Text style={styles.summaryValue}>{cart.items.reduce((acc: number, item: any) => acc + item.quantity, 0)}</Text>
+                                <Text style={styles.summaryLabel}>Quantity</Text>
+                            </View>
+                            <View style={styles.summaryDivider} />
+                            <View style={styles.summaryItem}>
+                                <Text style={[styles.summaryValue, { fontSize: 18 }]}>Rs. {cart.total_price}</Text>
+                                <Text style={styles.summaryLabel}>Total</Text>
+                            </View>
+                        </View>
+                    </View>
+                )}
+
+                {cart && cart.items && cart.items.length > 0 && (
+                    <TouchableOpacity style={styles.clearButton} onPress={handleClearCart}>
+                        <Ionicons name="trash-outline" size={18} color="#E85D3A" style={{ marginRight: 6 }} />
+                        <Text style={styles.clearButtonText}>Clear All Items</Text>
+                    </TouchableOpacity>
+                )}
+            </View>
+
             <FlatList
                 data={cart?.items || []}
                 renderItem={renderItem}
                 keyExtractor={(item) => item.id.toString()}
                 contentContainerStyle={styles.listContent}
                 refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-                ListHeaderComponent={renderHeader}
                 ListEmptyComponent={
                     <View style={styles.emptyState}>
                         <Ionicons name="cart-outline" size={64} color="#ddd" />
@@ -230,6 +228,9 @@ const CartScreen = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
+        backgroundColor: '#F3F4F6',
+    },
+    fixedHeader: {
         backgroundColor: '#F3F4F6',
     },
     center: {
