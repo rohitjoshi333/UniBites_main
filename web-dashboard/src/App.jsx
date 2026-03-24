@@ -7,8 +7,11 @@ import VendorDashboard from './pages/VendorDashboard';
 import VendorMenuManagement from './pages/VendorMenuManagement';
 import VendorOrders from './pages/VendorOrders';
 import AdminDashboard from './pages/AdminDashboard';
+import AdminActivities from './pages/AdminActivities';
 import UserManagement from './pages/UserManagement';
 import ManageCanteens from './pages/ManageCanteens';
+import AdminReports from './pages/AdminReports';
+import VendorReports from './pages/VendorReports';
 import Login from './pages/Login';
 
 const ProtectedRoute = ({ children, allowedRole }) => {
@@ -40,6 +43,7 @@ const App = () => {
             <Route index element={<VendorDashboard />} />
             <Route path="menu" element={<VendorMenuManagement />} />
             <Route path="orders" element={<VendorOrders />} />
+            <Route path="reports" element={<VendorReports />} />
           </Route>
 
           {/* Admin routes */}
@@ -49,8 +53,10 @@ const App = () => {
             </ProtectedRoute>
           }>
             <Route index element={<AdminDashboard />} />
+            <Route path="activities" element={<AdminActivities />} />
             <Route path="users" element={<UserManagement />} />
             <Route path="canteens" element={<ManageCanteens />} />
+            <Route path="reports" element={<AdminReports />} />
           </Route>
         </Routes>
       </BrowserRouter>

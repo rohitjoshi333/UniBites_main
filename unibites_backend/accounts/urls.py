@@ -13,6 +13,7 @@ from .views import (
     ChangePasswordView,
     UploadProfileImageView,
     UploadCanteenImageView,
+    VendorReportExportView,
 )
 
 urlpatterns = [
@@ -29,4 +30,5 @@ urlpatterns = [
     path("profile/update/", UpdateProfileView.as_view()),
     path("profile/change-password/", ChangePasswordView.as_view()),
     path("profile/upload-image/", UploadProfileImageView.as_view()),
+    path("vendor/reports/export/", VendorReportExportView.as_view()),
 ]

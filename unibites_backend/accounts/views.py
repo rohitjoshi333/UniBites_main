@@ -20,6 +20,8 @@ import random
 import cloudinary.uploader
 from rest_framework import permissions
 from rest_framework.parsers import MultiPartParser, FormParser
+import csv
+from django.http import HttpResponse
 
 
 class RegisterView(APIView):
@@ -288,3 +290,59 @@ class UploadCanteenImageView(APIView):
             return Response({"image_url": secure_url}, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({"error": f"Upload failed: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class VendorReportExportView(APIView):
+    """
+    GET /api/vendor/reports/export/?type=<orders|menu>
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        if user.role != "VENDOR":
+            return Response({"error": "Only vendors can export reports."}, status=status.HTTP_403_FORBIDDEN)
+
+        canteen = Canteen.objects.filter(vendor=user).first()
+        if not canteen:
+            return Response({"error": "No canteen assigned."}, status=status.HTTP_404_NOT_FOUND)
+
+        report_type = request.GET.get('type')
+        if not report_type:
+            return Response({"error": "Type parameter is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename="vendor_report_{report_type}_{timezone.now().strftime("%Y%m%d")}.csv"'
+        writer = csv.writer(response)
+
+        if report_type == 'orders':
+            from orders.models import Order
+            writer.writerow(['Order ID', 'User Name', 'User Email', 'Items', 'Total Amount', 'Status', 'Date'])
+            orders = Order.objects.filter(canteen=canteen).select_related('user').prefetch_related('items__menu_item').order_by('-created_at')
+            for order in orders:
+                items_str = ", ".join([f"{item.quantity}x {item.menu_item.name}" for item in order.items.all()])
+                writer.writerow([
+                    order.id,
+                    order.user.full_name if order.user else 'Unknown',
+                    order.user.email if order.user else 'Unknown',
+                    items_str,
+                    order.total_price,
+                    order.status,
+                    order.created_at.strftime("%Y-%m-%d %H:%M")
+                ])
+
+        elif report_type == 'menu':
+            from menu.models import MenuItem
+            writer.writerow(['Item ID', 'Name', 'Description', 'Price', 'Is Available'])
+            items = MenuItem.objects.filter(canteen=canteen).order_by('name')
+            for item in items:
+                writer.writerow([
+                    item.id,
+                    item.name,
+                    item.description,
+                    item.price,
+                    'Yes' if item.is_available else 'No'
+                ])
+        else:
+            return Response({"error": "Invalid report type"}, status=status.HTTP_400_BAD_REQUEST)
+
+        return response

@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, UtensilsCrossed, LogOut, ChefHat, ClipboardList } from 'lucide-react';
+import { LayoutDashboard, UtensilsCrossed, LogOut, ChefHat, ClipboardList, FileText } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 import '../styles/dashboard.css';
 
@@ -40,6 +40,13 @@ const Sidebar = () => {
                 >
                     <ClipboardList size={20} />
                     <span>Orders</span>
+                </NavLink>
+                <NavLink
+                    to="/reports"
+                    className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+                >
+                    <FileText size={20} />
+                    <span>Reports</span>
                 </NavLink>
             </nav>
             <div className="logout-btn">

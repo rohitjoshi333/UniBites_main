@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, Store, LogOut, FileText, ClipboardList, Settings } from 'lucide-react';
+import { LayoutDashboard, Users, Store, LogOut, FileText, ClipboardList, Settings, Activity } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 import '../styles/dashboard.css';
 
@@ -28,6 +28,13 @@ const AdminSidebar = () => {
                     <span>Dashboard</span>
                 </NavLink>
                 <NavLink
+                    to="/admin/activities"
+                    className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+                >
+                    <Activity size={20} />
+                    <span>Activity Log</span>
+                </NavLink>
+                <NavLink
                     to="/admin/users"
                     className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
                 >
@@ -40,6 +47,13 @@ const AdminSidebar = () => {
                 >
                     <Store size={20} />
                     <span>Manage Canteens</span>
+                </NavLink>
+                <NavLink
+                    to="/admin/reports"
+                    className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+                >
+                    <FileText size={20} />
+                    <span>Reports</span>
                 </NavLink>
             </nav>
             <div className="logout-btn">

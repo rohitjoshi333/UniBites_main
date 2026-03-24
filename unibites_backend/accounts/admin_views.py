@@ -8,6 +8,9 @@ from django.utils import timezone
 from datetime import timedelta
 import random
 import cloudinary.uploader
+import csv
+from django.http import HttpResponse
+from django.db.models import Count, Sum, Q
 
 
 class IsAdminUser(permissions.BasePermission):
@@ -44,12 +47,169 @@ class AdminDashboardView(APIView):
                 "created_at": item.created_at.isoformat(),
             })
 
+        # Sales analytics
+        from orders.models import Order
+        from django.db.models import Sum, Count, Avg
+
+        all_orders = Order.objects.all()
+        completed_orders = all_orders.filter(status='COMPLETED')
+        total_orders = all_orders.count()
+
+        now = timezone.now()
+        today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+        total_sales = completed_orders.aggregate(total=Sum('total_price'))['total'] or 0
+        monthly_sales = completed_orders.filter(created_at__gte=month_start).aggregate(total=Sum('total_price'))['total'] or 0
+        today_sales = completed_orders.filter(created_at__gte=today_start).aggregate(total=Sum('total_price'))['total'] or 0
+        avg_order_value = completed_orders.aggregate(avg=Avg('total_price'))['avg'] or 0
+
+        # Orders today
+        orders_today = all_orders.filter(created_at__gte=today_start).count()
+
+        # Order status breakdown
+        pending_orders = all_orders.filter(status__in=['PENDING', 'ACCEPTED', 'PREPARING', 'READY']).count()
+        completed_count = completed_orders.count()
+        rejected_count = all_orders.filter(status__in=['REJECTED', 'CANCELLED']).count()
+
+        # Payment method breakdown
+        esewa_orders = completed_orders.filter(payment_method='ESEWA').count()
+        cash_orders = completed_orders.filter(payment_method='CASH_ON_ARRIVAL').count()
+        esewa_revenue = completed_orders.filter(payment_method='ESEWA').aggregate(total=Sum('total_price'))['total'] or 0
+        cash_revenue = completed_orders.filter(payment_method='CASH_ON_ARRIVAL').aggregate(total=Sum('total_price'))['total'] or 0
+
+        # User breakdown
+        total_customers = User.objects.filter(role='USER').count()
+        total_vendors = User.objects.filter(role='VENDOR').count()
+        total_admins = User.objects.filter(role='ADMIN').count()
+        verified_users = User.objects.filter(is_email_verified=True).count()
+        unverified_users = User.objects.filter(is_email_verified=False).count()
+        new_users_this_month = User.objects.filter(date_joined__gte=month_start).count()
+
+        # Last 7 days daily sales
+        daily_sales = []
+        for i in range(6, -1, -1):
+            day = now - timedelta(days=i)
+            day_start = day.replace(hour=0, minute=0, second=0, microsecond=0)
+            day_end = day_start + timedelta(days=1)
+            amount = completed_orders.filter(
+                created_at__gte=day_start, created_at__lt=day_end
+            ).aggregate(total=Sum('total_price'))['total'] or 0
+            day_orders = all_orders.filter(
+                created_at__gte=day_start, created_at__lt=day_end
+            ).count()
+            daily_sales.append({
+                "date": day_start.strftime('%b %d'),
+                "amount": float(amount),
+                "orders": day_orders,
+            })
+
+        # Per-canteen sales breakdown
+        canteen_sales = []
+        canteens = Canteen.objects.filter(is_active=True).order_by('name')
+        for c in canteens:
+            c_completed = completed_orders.filter(canteen=c)
+            c_total = c_completed.aggregate(total=Sum('total_price'))['total'] or 0
+            c_today = c_completed.filter(created_at__gte=today_start).aggregate(total=Sum('total_price'))['total'] or 0
+            c_monthly = c_completed.filter(created_at__gte=month_start).aggregate(total=Sum('total_price'))['total'] or 0
+            c_orders = c_completed.count()
+            c_pending = all_orders.filter(canteen=c, status__in=['PENDING', 'ACCEPTED', 'PREPARING', 'READY']).count()
+            c_menu_items = MenuItem.objects.filter(canteen=c).count()
+            canteen_sales.append({
+                "canteen_name": c.name,
+                "total_sales": float(c_total),
+                "today_sales": float(c_today),
+                "monthly_sales": float(c_monthly),
+                "total_orders": c_orders,
+                "pending_orders": c_pending,
+                "menu_items": c_menu_items,
+                "rating": float(c.rating),
+            })
+
         return Response({
             "total_users": total_users,
             "total_canteens": total_canteens,
             "total_food_items": total_food_items,
             "recent_activities": recent_activities,
+            "total_orders": total_orders,
+            "orders_today": orders_today,
+            "total_sales": float(total_sales),
+            "monthly_sales": float(monthly_sales),
+            "today_sales": float(today_sales),
+            "avg_order_value": float(avg_order_value),
+            "pending_orders": pending_orders,
+            "completed_orders": completed_count,
+            "rejected_orders": rejected_count,
+            "esewa_orders": esewa_orders,
+            "cash_orders": cash_orders,
+            "esewa_revenue": float(esewa_revenue),
+            "cash_revenue": float(cash_revenue),
+            "total_customers": total_customers,
+            "total_vendors": total_vendors,
+            "total_admins": total_admins,
+            "verified_users": verified_users,
+            "unverified_users": unverified_users,
+            "new_users_this_month": new_users_this_month,
+            "daily_sales": daily_sales,
+            "canteen_sales": canteen_sales,
         })
+
+
+class AdminActivitiesView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsAdminUser]
+
+    def get(self, request):
+        from orders.models import Order
+
+        activities = []
+
+        # All orders
+        orders = Order.objects.select_related('user', 'canteen').order_by('-created_at')
+        for o in orders:
+            status_labels = {
+                'PENDING': 'placed',
+                'ACCEPTED': 'accepted',
+                'PREPARING': 'is being prepared',
+                'READY': 'is ready for pickup',
+                'COMPLETED': 'completed',
+                'REJECTED': 'rejected',
+                'CANCELLED': 'cancelled',
+            }
+            label = status_labels.get(o.status, o.status.lower())
+            activities.append({
+                "type": "order",
+                "description": f"Order #{o.id} {label} — Rs. {o.total_price} ({o.payment_method.replace('_', ' ').title()})",
+                "detail": f"by {o.user.full_name} at {o.canteen.name}",
+                "status": o.status,
+                "timestamp": o.created_at.isoformat(),
+            })
+
+        # User registrations
+        users = User.objects.order_by('-date_joined')
+        for u in users:
+            activities.append({
+                "type": "user",
+                "description": f"{u.full_name} registered as {u.role}",
+                "detail": u.email,
+                "status": "VERIFIED" if u.is_email_verified else "UNVERIFIED",
+                "timestamp": u.date_joined.isoformat(),
+            })
+
+        # Menu items added
+        menu_items = MenuItem.objects.select_related('canteen').order_by('-created_at')
+        for item in menu_items:
+            activities.append({
+                "type": "menu",
+                "description": f"{item.name} added to {item.canteen.name} menu",
+                "detail": f"Rs. {item.price}",
+                "status": "AVAILABLE" if item.is_available else "UNAVAILABLE",
+                "timestamp": item.created_at.isoformat(),
+            })
+
+        # Sort all by timestamp descending
+        activities.sort(key=lambda x: x['timestamp'], reverse=True)
+
+        return Response(activities)
 
 
 class AdminCanteenListView(APIView):
@@ -508,3 +668,65 @@ class AdminUserPasswordView(APIView):
 
         return Response({"message": f"Password updated for {user.full_name}."})
 
+class AdminReportExportView(APIView):
+    """
+    GET /api/admin/reports/export/?type=<orders|users|canteens>
+    """
+    permission_classes = [permissions.IsAuthenticated, IsAdminUser]
+
+    def get(self, request):
+        report_type = request.GET.get('type')
+        if not report_type:
+            return Response({"error": "Type parameter is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename="admin_report_{report_type}_{timezone.now().strftime("%Y%m%d")}.csv"'
+        writer = csv.writer(response)
+
+        if report_type == 'orders':
+            from orders.models import Order
+            writer.writerow(['Order ID', 'User', 'Canteen', 'Total Amount', 'Status', 'Date'])
+            orders = Order.objects.all().select_related('user', 'canteen').order_by('-created_at')
+            for order in orders:
+                writer.writerow([
+                    order.id,
+                    order.user.full_name if order.user else 'Unknown',
+                    order.canteen.name if order.canteen else 'Unknown',
+                    order.total_price,
+                    order.status,
+                    order.created_at.strftime("%Y-%m-%d %H:%M")
+                ])
+
+        elif report_type == 'users':
+            writer.writerow(['User ID', 'Name', 'Email', 'Role', 'Status', 'Joined Date'])
+            users = User.objects.all().order_by('-date_joined')
+            for u in users:
+                writer.writerow([
+                    u.id,
+                    u.full_name,
+                    u.email,
+                    u.role,
+                    'Active' if u.is_active else 'Inactive',
+                    u.date_joined.strftime("%Y-%m-%d")
+                ])
+
+        elif report_type == 'canteens':
+            from orders.models import Order
+            writer.writerow(['Canteen ID', 'Name', 'Vendor', 'Total Sales', 'Pending Orders', 'Completed Orders'])
+            canteens = Canteen.objects.all().select_related('vendor')
+            for c in canteens:
+                sales = Order.objects.filter(canteen=c, status='COMPLETED').aggregate(total=Sum('total_price'))['total'] or 0
+                pending = Order.objects.filter(canteen=c, status='PENDING').count()
+                completed = Order.objects.filter(canteen=c, status='COMPLETED').count()
+                writer.writerow([
+                    c.id,
+                    c.name,
+                    c.vendor.full_name if c.vendor else 'Unassigned',
+                    sales,
+                    pending,
+                    completed
+                ])
+        else:
+            return Response({"error": "Invalid report type"}, status=status.HTTP_400_BAD_REQUEST)
+
+        return response

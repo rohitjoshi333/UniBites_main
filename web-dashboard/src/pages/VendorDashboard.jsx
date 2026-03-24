@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Upload, ImageIcon, TrendingUp, DollarSign, Calendar } from 'lucide-react';
+import { Upload, ImageIcon, Star } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import api from '../services/api';
 import '../styles/dashboard.css';
@@ -22,6 +22,20 @@ const VendorDashboard = () => {
         total: 0,
         monthly: 0,
         today: 0,
+        avgOrder: 0,
+    });
+    const [orderStats, setOrderStats] = useState({
+        total: 0,
+        today: 0,
+        pending: 0,
+        completed: 0,
+        rejected: 0,
+    });
+    const [paymentStats, setPaymentStats] = useState({
+        esewaOrders: 0,
+        esewaRevenue: 0,
+        cashOrders: 0,
+        cashRevenue: 0,
     });
     const [chartData, setChartData] = useState([]);
 
@@ -39,18 +53,33 @@ const VendorDashboard = () => {
                 let totalSales = 0;
                 let monthlySales = 0;
                 let todaysSales = 0;
+                let completedCount = 0;
+                let rejectedCount = 0;
+                let ordersToday = 0;
+                let totalOrders = 0;
+                let esewaOrders = 0;
+                let esewaRevenue = 0;
+                let cashOrders = 0;
+                let cashRevenue = 0;
                 const last7Days = [];
 
                 try {
                     const ordersRes = await api.get('vendor/orders/');
                     const allOrders = ordersRes.data;
+                    totalOrders = allOrders.length;
                     pendingOrders = allOrders.filter(o => ['PENDING', 'ACCEPTED', 'PREPARING', 'READY'].includes(o.status)).length;
+                    rejectedCount = allOrders.filter(o => ['REJECTED', 'CANCELLED'].includes(o.status)).length;
 
                     const completedOrders = allOrders.filter(o => o.status === 'COMPLETED');
+                    completedCount = completedOrders.length;
                     const now = new Date();
                     const currentMonth = now.getMonth();
                     const currentYear = now.getFullYear();
                     const currentDate = now.getDate();
+
+                    // Orders today
+                    const todayStr = now.toDateString();
+                    ordersToday = allOrders.filter(o => new Date(o.created_at).toDateString() === todayStr).length;
 
                     for (let i = 6; i >= 0; i--) {
                         const d = new Date();
@@ -74,6 +103,15 @@ const VendorDashboard = () => {
                         const dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
                         const dayData = last7Days.find(item => item.name === dateStr);
                         if (dayData) dayData.sales += amount;
+
+                        // Payment breakdown
+                        if (o.payment_method === 'ESEWA') {
+                            esewaOrders++;
+                            esewaRevenue += amount;
+                        } else {
+                            cashOrders++;
+                            cashRevenue += amount;
+                        }
                     });
 
                 } catch (_) { }
@@ -81,7 +119,21 @@ const VendorDashboard = () => {
                 setSalesStats({
                     total: totalSales,
                     monthly: monthlySales,
-                    today: todaysSales
+                    today: todaysSales,
+                    avgOrder: completedCount > 0 ? totalSales / completedCount : 0,
+                });
+                setOrderStats({
+                    total: totalOrders,
+                    today: ordersToday,
+                    pending: pendingOrders,
+                    completed: completedCount,
+                    rejected: rejectedCount,
+                });
+                setPaymentStats({
+                    esewaOrders,
+                    esewaRevenue,
+                    cashOrders,
+                    cashRevenue,
                 });
                 setChartData(last7Days);
 
@@ -143,6 +195,7 @@ const VendorDashboard = () => {
                 </div>
             </header>
 
+            {/* Top Stats */}
             <div className="stats-grid st-col-4">
                 <div className="stat-card">
                     <span className="stat-label">Total Menu Items</span>
@@ -154,8 +207,8 @@ const VendorDashboard = () => {
                 </div>
                 <div className="stat-card">
                     <span className="stat-label">Canteen Rating</span>
-                    <span className="stat-value" style={{ color: 'var(--primary-color)' }}>
-                        {stats.rating} <small style={{ fontSize: '1.25rem' }}>⭐</small>
+                    <span className="stat-value" style={{ color: 'var(--primary-color)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        {stats.rating} <Star size={18} fill="#eab308" stroke="#eab308" />
                     </span>
                 </div>
                 <div className="stat-card">
@@ -164,22 +217,77 @@ const VendorDashboard = () => {
                 </div>
             </div>
 
-            <h3 className="dashboard-section-heading">Sales Summary</h3>
-            <div className="stats-grid st-col-3">
-                <div className="stat-card">
-                    <span className="stat-label">Today's Sales</span>
-                    <span className="stat-value">Rs. {salesStats.today.toFixed(2)}</span>
+            {/* Compact Panels — Sales + Orders side by side */}
+            <div className="admin-panels-row">
+                <div className="admin-compact-panel">
+                    <h3 className="admin-compact-title">Sales Overview</h3>
+                    <div className="admin-compact-grid">
+                        <div className="admin-compact-item">
+                            <span className="admin-compact-label">Today</span>
+                            <span className="admin-compact-value">Rs. {salesStats.today.toFixed(0)}</span>
+                        </div>
+                        <div className="admin-compact-item">
+                            <span className="admin-compact-label">This Month</span>
+                            <span className="admin-compact-value">Rs. {salesStats.monthly.toFixed(0)}</span>
+                        </div>
+                        <div className="admin-compact-item">
+                            <span className="admin-compact-label">All Time</span>
+                            <span className="admin-compact-value">Rs. {salesStats.total.toFixed(0)}</span>
+                        </div>
+                        <div className="admin-compact-item">
+                            <span className="admin-compact-label">Avg Order</span>
+                            <span className="admin-compact-value">Rs. {salesStats.avgOrder.toFixed(0)}</span>
+                        </div>
+                    </div>
                 </div>
-                <div className="stat-card">
-                    <span className="stat-label">Monthly Sales</span>
-                    <span className="stat-value">Rs. {salesStats.monthly.toFixed(2)}</span>
-                </div>
-                <div className="stat-card">
-                    <span className="stat-label">Total Sales (All Time)</span>
-                    <span className="stat-value">Rs. {salesStats.total.toFixed(2)}</span>
+
+                <div className="admin-compact-panel">
+                    <h3 className="admin-compact-title">Orders</h3>
+                    <div className="admin-compact-grid">
+                        <div className="admin-compact-item">
+                            <span className="admin-compact-label">Today</span>
+                            <span className="admin-compact-value">{orderStats.today}</span>
+                        </div>
+                        <div className="admin-compact-item">
+                            <span className="admin-compact-label">Pending</span>
+                            <span className="admin-compact-value" style={{ color: '#D97706' }}>{orderStats.pending}</span>
+                        </div>
+                        <div className="admin-compact-item">
+                            <span className="admin-compact-label">Completed</span>
+                            <span className="admin-compact-value" style={{ color: '#059669' }}>{orderStats.completed}</span>
+                        </div>
+                        <div className="admin-compact-item">
+                            <span className="admin-compact-label">Rejected</span>
+                            <span className="admin-compact-value" style={{ color: '#DC2626' }}>{orderStats.rejected}</span>
+                        </div>
+                    </div>
                 </div>
             </div>
 
+            {/* Payment Panel */}
+            <div className="admin-compact-panel">
+                <h3 className="admin-compact-title">Payments</h3>
+                <div className="admin-compact-grid admin-compact-grid-wide">
+                    <div className="admin-compact-item">
+                        <span className="admin-compact-label">eSewa Orders</span>
+                        <span className="admin-compact-value">{paymentStats.esewaOrders}</span>
+                    </div>
+                    <div className="admin-compact-item">
+                        <span className="admin-compact-label">eSewa Revenue</span>
+                        <span className="admin-compact-value">Rs. {paymentStats.esewaRevenue.toFixed(0)}</span>
+                    </div>
+                    <div className="admin-compact-item">
+                        <span className="admin-compact-label">Cash Orders</span>
+                        <span className="admin-compact-value">{paymentStats.cashOrders}</span>
+                    </div>
+                    <div className="admin-compact-item">
+                        <span className="admin-compact-label">Cash Revenue</span>
+                        <span className="admin-compact-value">Rs. {paymentStats.cashRevenue.toFixed(0)}</span>
+                    </div>
+                </div>
+            </div>
+
+            {/* Sales Chart */}
             <div className="card dashboard-main-card dashboard-chart-card">
                 <h3 className="dashboard-section-heading">Sales Trend (Last 7 Days)</h3>
                 <ResponsiveContainer width="100%" height="80%">
@@ -196,6 +304,7 @@ const VendorDashboard = () => {
                 </ResponsiveContainer>
             </div>
 
+            {/* Branding + Quick Actions */}
             <div className="card dashboard-main-card">
                 <div className="dashboard-main-layout">
 
@@ -268,4 +377,3 @@ const VendorDashboard = () => {
 };
 
 export default VendorDashboard;
-
