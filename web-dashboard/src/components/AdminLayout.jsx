@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, Store, LogOut, FileText, ClipboardList, Settings, Activity } from 'lucide-react';
+import { LayoutDashboard, Users, Store, LogOut, FileText, ClipboardList, Settings, Activity, Image } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 import '../styles/dashboard.css';
 
@@ -47,6 +47,13 @@ const AdminSidebar = () => {
                 >
                     <Store size={20} />
                     <span>Manage Canteens</span>
+                </NavLink>
+                <NavLink
+                    to="/admin/banners"
+                    className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+                >
+                    <Image size={20} />
+                    <span>Manage Banners</span>
                 </NavLink>
                 <NavLink
                     to="/admin/reports"

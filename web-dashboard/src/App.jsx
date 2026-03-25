@@ -12,6 +12,7 @@ import UserManagement from './pages/UserManagement';
 import ManageCanteens from './pages/ManageCanteens';
 import AdminReports from './pages/AdminReports';
 import VendorReports from './pages/VendorReports';
+import ManageBanners from './pages/ManageBanners';
 import Login from './pages/Login';
 
 const ProtectedRoute = ({ children, allowedRole }) => {
@@ -56,6 +57,7 @@ const App = () => {
             <Route path="activities" element={<AdminActivities />} />
             <Route path="users" element={<UserManagement />} />
             <Route path="canteens" element={<ManageCanteens />} />
+            <Route path="banners" element={<ManageBanners />} />
             <Route path="reports" element={<AdminReports />} />
           </Route>
         </Routes>

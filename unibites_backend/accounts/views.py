@@ -1,6 +1,6 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework import status, viewsets
 from .serializers import (
     CanteenSerializer,
     RegisterSerializer,
@@ -12,8 +12,9 @@ from .serializers import (
     ProfileSerializer,
     ProfileUpdateSerializer,
     ChangePasswordSerializer,
+    BannerSerializer,
 )
-from .models import User, Canteen
+from .models import User, Canteen, Banner
 from django.utils import timezone
 from datetime import timedelta
 import random
@@ -346,3 +347,43 @@ class VendorReportExportView(APIView):
             return Response({"error": "Invalid report type"}, status=status.HTTP_400_BAD_REQUEST)
 
         return response
+
+
+class BannerListView(APIView):
+    """
+    GET /api/banners/ - Public/App view
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        banners = Banner.objects.filter(is_active=True).order_by("serial_number", "-created_at")
+        serializer = BannerSerializer(banners, many=True)
+        return Response(serializer.data)
+
+
+class BannerViewSet(viewsets.ModelViewSet):
+    """
+    CRUD /api/admin/banners/ - Admin only
+    """
+    queryset = Banner.objects.all().order_by("serial_number", "-created_at")
+    serializer_class = BannerSerializer
+    permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
+
+
+class UploadBannerImageView(APIView):
+    """
+    POST /api/admin/banners/upload/ - Admin only
+    """
+    permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
+    parser_classes = (MultiPartParser, FormParser)
+
+    def post(self, request):
+        file = request.data.get('image')
+        if not file:
+            return Response({"error": "No image provided"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            upload_data = cloudinary.uploader.upload(file, folder="unibites/banners")
+            return Response({"image_url": upload_data['secure_url']}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

@@ -87,34 +87,37 @@ const CheckoutScreen = () => {
 
     return (
         <View style={styles.container}>
-            <ScrollView contentContainerStyle={styles.scroll}>
+            <View style={styles.header}>
+                <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+                    <Ionicons name="arrow-back" size={22} color="#fff" />
+                </TouchableOpacity>
+                <Text style={styles.headerTitle}>Checkout</Text>
+                <View style={{ width: 36 }} />
+            </View>
 
-                <View style={styles.header}>
-                    <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-                        <Ionicons name="arrow-back" size={22} color="#fff" />
-                    </TouchableOpacity>
-                    <Text style={styles.headerTitle}>Checkout</Text>
-                    <View style={{ width: 36 }} />
-                </View>
-
-
-                <View style={styles.section}>
+            <View style={styles.mainContent}>
+                <View style={[styles.section, { flex: 1 }]}>
                     <Text style={styles.sectionTitle}>Order Summary</Text>
                     {hasItems ? (
                         <>
-                            {cart.items.map((item: any) => (
-                                <View key={item.id} style={styles.itemRow}>
-                                    <Image
-                                        source={{ uri: item.menu_item.image_url || 'https://via.placeholder.com/60' }}
-                                        style={styles.itemImage}
-                                    />
-                                    <View style={styles.itemDetails}>
-                                        <Text style={styles.itemName}>{item.menu_item.name}</Text>
-                                        <Text style={styles.itemPrice}>Rs. {item.menu_item.price} × {item.quantity}</Text>
+                            <ScrollView 
+                                style={styles.itemListScroll}
+                                showsVerticalScrollIndicator={false}
+                            >
+                                {cart.items.map((item: any) => (
+                                    <View key={item.id} style={styles.itemRow}>
+                                        <Image
+                                            source={{ uri: item.menu_item.image_url || 'https://via.placeholder.com/60' }}
+                                            style={styles.itemImage}
+                                        />
+                                        <View style={styles.itemDetails}>
+                                            <Text style={styles.itemName}>{item.menu_item.name}</Text>
+                                            <Text style={styles.itemPrice}>Rs. {item.menu_item.price} × {item.quantity}</Text>
+                                        </View>
+                                        <Text style={styles.itemSubtotal}>Rs. {item.subtotal}</Text>
                                     </View>
-                                    <Text style={styles.itemSubtotal}>Rs. {item.subtotal}</Text>
-                                </View>
-                            ))}
+                                ))}
+                            </ScrollView>
 
                             <View style={styles.divider} />
                             <View style={styles.totalRow}>
@@ -127,9 +130,8 @@ const CheckoutScreen = () => {
                     )}
                 </View>
 
-
                 {cart?.canteen && (
-                    <View style={styles.section}>
+                    <View style={[styles.section, styles.fixedSection]}>
                         <Text style={styles.sectionTitle}>Pickup From</Text>
                         <View style={styles.infoRow}>
                             <Ionicons name="storefront-outline" size={20} color="#E85D3A" />
@@ -138,8 +140,7 @@ const CheckoutScreen = () => {
                     </View>
                 )}
 
-
-                <View style={styles.section}>
+                <View style={[styles.section, styles.fixedSection]}>
                     <Text style={styles.sectionTitle}>Payment Method</Text>
 
                     {/* Cash on Arrival Option */}
@@ -178,7 +179,8 @@ const CheckoutScreen = () => {
                         )}
                     </TouchableOpacity>
                 </View>
-            </ScrollView>
+            </View>
+
 
 
             <View style={styles.footer}>
@@ -226,8 +228,17 @@ const styles = StyleSheet.create({
         backgroundColor: "#F3F4F6",
     },
 
-    scroll: {
-        paddingBottom: 180,
+    mainContent: {
+        flex: 1,
+        paddingBottom: 160, // Space for footer
+    },
+
+    itemListScroll: {
+        flex: 1,
+    },
+
+    fixedSection: {
+        marginTop: 12,
     },
 
     header: {

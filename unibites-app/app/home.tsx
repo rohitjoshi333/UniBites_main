@@ -7,6 +7,8 @@ import {
   TextInput,
   ScrollView,
   TouchableOpacity,
+  FlatList,
+  Dimensions,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { FontAwesome, Ionicons } from "@expo/vector-icons";
@@ -24,15 +26,39 @@ type Canteen = {
   image_url: string | null;
 };
 
+type Banner = {
+  id: number;
+  title: string;
+  description: string;
+  image_url: string;
+  serial_number: number;
+};
+
 export default function HomeScreen() {
   const router = useRouter();
+  const screenWidth = Dimensions.get("window").width;
   const [fullName, setFullName] = useState("User");
   const [canteens, setCanteens] = useState<Canteen[]>([]);
+  const [banners, setBanners] = useState<Banner[]>([]);
+  const [activeSlide, setActiveSlide] = useState(0);
+  const flatListRef = React.useRef<any>(null);
 
   useEffect(() => {
     fetchCanteens();
     fetchUserName();
+    fetchBanners();
   }, []);
+
+  useEffect(() => {
+    if (banners.length > 0) {
+      const timer = setInterval(() => {
+        let nextSlide = (activeSlide + 1) % banners.length;
+        setActiveSlide(nextSlide);
+        flatListRef.current?.scrollToIndex({ index: nextSlide, animated: true });
+      }, 6000);
+      return () => clearInterval(timer);
+    }
+  }, [activeSlide, banners]);
 
   const fetchUserName = async () => {
     try {
@@ -58,6 +84,16 @@ export default function HomeScreen() {
     }
   };
 
+  const fetchBanners = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/banners/`);
+      const data = await response.json();
+      setBanners(data);
+    } catch (error) {
+      console.log("Failed to load banners", error);
+    }
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.fixedContent}>
@@ -76,15 +112,62 @@ export default function HomeScreen() {
           Fuel Your Campus, One Bite at a Time
         </Text>
 
-        <View style={styles.banner}>
-          <Image
-            source={require("../assets/images/islingtoncanteen.jpg")}
-            style={styles.bannerImage}
-          />
-          <View style={styles.bannerOverlay} />
-          <Text style={styles.bannerText}>
-            Enjoy Best Khana set{"\n"}at Islington Canteen
-          </Text>
+        <View style={styles.carouselContainer}>
+          {banners.length > 0 ? (
+            <>
+              <FlatList
+                ref={flatListRef}
+                data={banners}
+                horizontal
+                pagingEnabled
+                showsHorizontalScrollIndicator={false}
+                onMomentumScrollEnd={(e: any) => {
+                  const contentOffset = e.nativeEvent.contentOffset.x;
+                  const viewSize = e.nativeEvent.layoutMeasurement.width;
+                  const index = Math.floor(contentOffset / viewSize);
+                  setActiveSlide(index);
+                }}
+                keyExtractor={(item: Banner) => item.id.toString()}
+                renderItem={({ item }: { item: Banner }) => (
+                  <View style={[styles.bannerWrapper, { width: screenWidth - 50 }]}>
+                    <Image
+                      source={{ uri: item.image_url }}
+                      style={styles.bannerImage}
+                    />
+                    <View style={styles.bannerOverlay} />
+                    <View style={styles.bannerTextContainer}>
+                      <Text style={styles.bannerText}>{item.title}</Text>
+                      {item.description ? (
+                        <Text style={styles.bannerSubText}>{item.description}</Text>
+                      ) : null}
+                    </View>
+                  </View>
+                )}
+              />
+              <View style={styles.pagination}>
+                {banners.map((_, index) => (
+                  <View
+                    key={index}
+                    style={[
+                      styles.dot,
+                      activeSlide === index ? styles.activeDot : null,
+                    ]}
+                  />
+                ))}
+              </View>
+            </>
+          ) : (
+            <View style={[styles.bannerWrapper, { width: screenWidth - 50 }]}>
+              <Image
+                source={require("../assets/images/islingtoncanteen.jpg")}
+                style={styles.bannerImage}
+              />
+              <View style={styles.bannerOverlay} />
+              <Text style={styles.bannerText}>
+                Enjoy Best Khana set{"\n"}at Islington Canteen
+              </Text>
+            </View>
+          )}
         </View>
 
         <View style={styles.sectionHeader}>
@@ -193,10 +276,14 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
 
-  banner: {
+  carouselContainer: {
+    marginTop: 20,
+    height: 180,
+  },
+
+  bannerWrapper: {
     height: 160,
     borderRadius: 16,
-    marginTop: 20,
     overflow: "hidden",
     justifyContent: "flex-end",
   },
@@ -209,14 +296,43 @@ const styles = StyleSheet.create({
 
   bannerOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.55)",
+    backgroundColor: "rgba(0,0,0,0.45)",
+  },
+
+  bannerTextContainer: {
+    padding: 16,
   },
 
   bannerText: {
     color: "#fff",
-    fontSize: 16,
-    fontWeight: "600",
-    padding: 16,
+    fontSize: 18,
+    fontWeight: "700",
+  },
+
+  bannerSubText: {
+    color: "rgba(255,255,255,0.8)",
+    fontSize: 12,
+    marginTop: 4,
+  },
+
+  pagination: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 8,
+    gap: 6,
+  },
+
+  dot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: "#E5E7EB",
+  },
+
+  activeDot: {
+    width: 14,
+    backgroundColor: "#4f46e5",
   },
 
   sectionHeader: {

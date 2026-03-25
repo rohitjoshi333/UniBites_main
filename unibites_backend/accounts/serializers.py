@@ -1,8 +1,14 @@
 from rest_framework import serializers
 from django.utils import timezone
 from datetime import timedelta
-from .models import User, Canteen
+from .models import User, Canteen, Banner
 import random
+
+class BannerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Banner
+        fields = ["id", "title", "description", "image_url", "serial_number", "is_active", "created_at"]
+        read_only_fields = ["created_at"]
 
 class RegisterSerializer(serializers.ModelSerializer):
     # extra field only for input

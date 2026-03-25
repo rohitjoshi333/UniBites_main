@@ -95,3 +95,17 @@ class Review(models.Model):
 
     def __str__(self):
         return f"{self.user.full_name} - {self.canteen.name} ({self.rating}★)"
+
+class Banner(models.Model):
+    title = models.CharField(max_length=255, blank=True, null=True)
+    description = models.TextField(blank=True, null=True)
+    image_url = models.URLField(max_length=500)
+    serial_number = models.PositiveIntegerField(default=0, help_text="Order of display")
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["serial_number", "-created_at"]
+
+    def __str__(self):
+        return self.title or f"Banner {self.id}"

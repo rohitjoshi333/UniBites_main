@@ -1,4 +1,5 @@
-from django.urls import path
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
 from .views import (
     RegisterView,
     VerifyOtpView,
@@ -14,7 +15,13 @@ from .views import (
     UploadProfileImageView,
     UploadCanteenImageView,
     VendorReportExportView,
+    BannerListView,
+    BannerViewSet,
+    UploadBannerImageView,
 )
+
+router = DefaultRouter()
+router.register(r'admin/banners', BannerViewSet, basename='admin-banners')
 
 urlpatterns = [
     path("register/", RegisterView.as_view()),
@@ -31,4 +38,7 @@ urlpatterns = [
     path("profile/change-password/", ChangePasswordView.as_view()),
     path("profile/upload-image/", UploadProfileImageView.as_view()),
     path("vendor/reports/export/", VendorReportExportView.as_view()),
+    path("banners/", BannerListView.as_view()),
+    path("admin/banners/upload/", UploadBannerImageView.as_view()),
+    path("", include(router.urls)),
 ]
