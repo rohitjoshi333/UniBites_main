@@ -537,6 +537,13 @@ class AdminUserDetailView(APIView):
             return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
 
         # Update allowed fields
+        if "email" in request.data:
+            new_email = request.data["email"]
+            if new_email != user.email:
+                if User.objects.filter(email=new_email).exclude(id=user.id).exists():
+                    return Response({"error": "A user with this email already exists."}, status=status.HTTP_400_BAD_REQUEST)
+                user.email = new_email
+
         if "role" in request.data:
             user.role = request.data["role"]
         if "is_active" in request.data:

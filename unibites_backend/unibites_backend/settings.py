@@ -36,6 +36,7 @@ INSTALLED_APPS = [
     "corsheaders",
     "orders",
     "cloudinary",
+    "channels",
 ]
 
 MIDDLEWARE = [
@@ -68,6 +69,13 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = "unibites_backend.wsgi.application"
+ASGI_APPLICATION = "unibites_backend.asgi.application"
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer",
+    },
+}
 
 
 # Database

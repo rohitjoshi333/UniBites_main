@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import {
     View,
     Text,
@@ -14,6 +14,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as SecureStore from 'expo-secure-store';
 import { getMyOrders, cancelOrder, rateOrder } from '../../services/orderService';
+import { API_BASE_URL } from '../../constants/api';
 
 const STATUS_CONFIG: Record<string, { color: string; bg: string; icon: any }> = {
     PENDING: { color: '#D97706', bg: '#FEF3C7', icon: 'time-outline' },
@@ -122,6 +123,50 @@ export default function OrdersScreen() {
     const [selectedRating, setSelectedRating] = useState(0);
     const [dismissedRatings, setDismissedRatings] = useState<Set<number>>(new Set());
 
+    const wsRef = useRef<WebSocket | null>(null);
+
+    const connectWebSocket = async () => {
+        const token = await SecureStore.getItemAsync('accessToken');
+        if (!token) return;
+
+        const wsBase = API_BASE_URL.replace(/^http/, 'ws');
+        const ws = new WebSocket(`${wsBase}/ws/orders/?token=${token}`);
+        wsRef.current = ws;
+
+        ws.onmessage = (event) => {
+            try {
+                const msg = JSON.parse(event.data);
+                if (msg.type === 'order_status_update') {
+                    setOrders(prev => {
+                        const updated = prev.map(o =>
+                            o.id === msg.order_id ? { ...o, status: msg.status } : o
+                        );
+
+                        if (msg.status === 'COMPLETED') {
+                            const completedOrder = updated.find(o => o.id === msg.order_id);
+
+                            if (completedOrder && !completedOrder.is_rated && !ratingOrder && !dismissedRatings.has(msg.order_id)) {
+                                setRatingOrder(completedOrder);
+                                setHasRated(false);
+                                setSelectedRating(0);
+                            }
+                        }
+                        return updated;
+                    });
+                }
+            } catch (e) {
+                console.warn('WS message parse error', e);
+            }
+        };
+
+        ws.onerror = (e) => console.warn('WS error', e);
+    };
+
+    const disconnectWebSocket = () => {
+        wsRef.current?.close();
+        wsRef.current = null;
+    };
+
     const fetchOrders = async () => {
         try {
             const data = await getMyOrders();
@@ -152,7 +197,11 @@ export default function OrdersScreen() {
         }
     };
 
-    useFocusEffect(useCallback(() => { fetchOrders(); }, []));
+    useFocusEffect(useCallback(() => {
+        fetchOrders();
+        connectWebSocket();
+        return () => disconnectWebSocket();
+    }, []));
 
     const onRefresh = () => { setRefreshing(true); fetchOrders(); };
 

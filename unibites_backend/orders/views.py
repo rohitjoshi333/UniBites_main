@@ -4,11 +4,15 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from django.shortcuts import get_object_or_404
 from django.conf import settings
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
 import uuid
 from .models import Cart, CartItem, Order, OrderItem
 from menu.models import MenuItem
 from .serializers import CartSerializer, OrderSerializer
 from .esewa import generate_signature, verify_esewa_response
+
+channel_layer = get_channel_layer()
 
 
 
@@ -129,6 +133,22 @@ class PlaceOrderView(APIView):
         cart_items.delete()
 
         serializer = OrderSerializer(order)
+
+        # Real-time: notify vendor dashboard
+        try:
+            async_to_sync(channel_layer.group_send)(
+                f"vendor_{canteen.id}",
+                {
+                    "type": "order.update",
+                    "data": {
+                        "type": "new_order",
+                        "order": serializer.data,
+                    },
+                },
+            )
+        except Exception:
+            pass  # WebSocket push HTTP response always returns
+
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
@@ -264,6 +284,23 @@ class VendorOrderStatusView(APIView):
         order.save(update_fields=['status'])
 
         serializer = OrderSerializer(order)
+
+        # Real-time: notify the customer
+        try:
+            async_to_sync(channel_layer.group_send)(
+                f"user_{order.user_id}",
+                {
+                    "type": "order.update",
+                    "data": {
+                        "type": "order_status_update",
+                        "order_id": order.id,
+                        "status": new_status,
+                    },
+                },
+            )
+        except Exception:
+            pass  # WebSocket push HTTP response always returns
+
         return Response(serializer.data)
 
 
@@ -414,6 +451,22 @@ class EsewaVerifyView(APIView):
 
         order.payment_status = Order.PaymentStatus.PAID
         order.save(update_fields=['payment_status'])
+
+        # Real-time notify vendor dashboard
+        try:
+            serializer = OrderSerializer(order)
+            async_to_sync(channel_layer.group_send)(
+                f"vendor_{order.canteen_id}",
+                {
+                    "type": "order.update",
+                    "data": {
+                        "type": "new_order",
+                        "order": serializer.data,
+                    },
+                },
+            )
+        except Exception:
+            pass  # WebSocket push
 
         # Redirect to deep link so the mobile app picks it up
         return deep_link_redirect(f"unibitesapp://payment-success?orderId={order.id}", order.id)

@@ -72,6 +72,7 @@ const UserManagement = () => {
         setSelectedUser(user);
         setFormData({
             full_name: user.full_name,
+            email: user.email,
             phone: user.phone || '',
             role: user.role,
             is_active: user.is_active,
@@ -348,7 +349,13 @@ const UserManagement = () => {
                             </div>
                             <div className="form-group">
                                 <label className="form-label">Email</label>
-                                <input className="form-input" value={selectedUser.email} disabled />
+                                <input
+                                    type="email"
+                                    className="form-input"
+                                    value={formData.email}
+                                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                    required
+                                />
                             </div>
                             <div className="form-group">
                                 <label className="form-label">Role</label>

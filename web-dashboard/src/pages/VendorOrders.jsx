@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { ClipboardList, RefreshCw, CheckCircle, XCircle, ChevronDown, ChevronUp, Phone, Mail, User } from 'lucide-react';
 import api from '../services/api';
+import notificationSound from '../assets/notification_sound.mp3';
 import '../styles/dashboard.css';
 
 const STATUS_CONFIG = {
@@ -78,7 +79,7 @@ const OrderCard = ({ order, onStatusUpdate }) => {
 
     return (
         <div className={`order-card-compact ${order.status === 'PENDING' ? 'pulse-pending' : ''}`}>
-            
+
             <div className="occ-top">
                 <div className="occ-top-left">
                     <span className="occ-id">#{order.id}</span>
@@ -99,9 +100,9 @@ const OrderCard = ({ order, onStatusUpdate }) => {
 
             <div className="occ-middle">
                 <div className="occ-customer">
-                    <div className="occ-customer-item"><User size={14}/> <span>{order.user_info?.name}</span></div>
-                    <div className="occ-customer-item"><Phone size={14}/> <span>{order.user_info?.phone}</span></div>
-                    <div className="occ-customer-item"><Mail size={14}/> <span>{order.user_info?.email}</span></div>
+                    <div className="occ-customer-item"><User size={14} /> <span>{order.user_info?.name}</span></div>
+                    <div className="occ-customer-item"><Phone size={14} /> <span>{order.user_info?.phone}</span></div>
+                    <div className="occ-customer-item"><Mail size={14} /> <span>{order.user_info?.email}</span></div>
                 </div>
 
                 {order.status !== 'REJECTED' && order.status !== 'CANCELLED' && (
@@ -129,7 +130,7 @@ const OrderCard = ({ order, onStatusUpdate }) => {
                     {expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                     {order.items.length} item(s)
                 </button>
-                
+
                 {actions.length > 0 && (
                     <div className="occ-actions">
                         {actions.map(a => (
@@ -167,6 +168,45 @@ const VendorOrders = () => {
         }
     }, []);
 
+    // WebSocket real-time new order alerts
+    const wsRef = useRef(null);
+
+    useEffect(() => {
+        const token = localStorage.getItem('access_token');
+        if (!token) return;
+
+        const wsBase = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000')
+            .replace(/^http/, 'ws');
+        const ws = new WebSocket(`${wsBase}/ws/orders/?token=${token}`);
+        wsRef.current = ws;
+
+        ws.onmessage = (event) => {
+            try {
+                const msg = JSON.parse(event.data);
+                if (msg.type === 'new_order') {
+                    setOrders(prev => [msg.order, ...prev]);
+
+                    // Play notification sound
+                    try {
+                        const audio = new Audio(notificationSound);
+                        audio.play().catch(e => console.warn('Audio play failed', e));
+                    } catch (err) {
+                        console.warn('Audio initialization failed', err);
+                    }
+
+                    document.title = 'New Order! — UniBites';
+                    setTimeout(() => { document.title = 'Vendor Orders — UniBites'; }, 3000);
+                }
+            } catch (e) {
+                console.warn('WS message parse error', e);
+            }
+        };
+
+        ws.onerror = (e) => console.warn('WS error', e);
+
+        return () => ws.close();
+    }, []);
+
     useEffect(() => { fetchOrders(); }, [fetchOrders]);
 
     const handleRefresh = () => { setRefreshing(true); fetchOrders(); };
@@ -194,8 +234,8 @@ const VendorOrders = () => {
         const d = new Date(dateString);
         const now = new Date();
         return d.getDate() === now.getDate() &&
-               d.getMonth() === now.getMonth() &&
-               d.getFullYear() === now.getFullYear();
+            d.getMonth() === now.getMonth() &&
+            d.getFullYear() === now.getFullYear();
     };
 
     const todaysSales = orders
