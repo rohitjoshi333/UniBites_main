@@ -13,8 +13,9 @@ from .serializers import (
     ProfileUpdateSerializer,
     ChangePasswordSerializer,
     BannerSerializer,
+    ReviewSerializer,
 )
-from .models import User, Canteen, Banner
+from .models import User, Canteen, Banner, Review
 from django.utils import timezone
 from datetime import timedelta
 import random
@@ -387,3 +388,17 @@ class UploadBannerImageView(APIView):
             return Response({"image_url": upload_data['secure_url']}, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class CanteenReviewListView(APIView):
+    """
+    GET /api/canteens/<canteen_id>/reviews/
+    Returns all reviews for a specific canteen.
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request, canteen_id):
+        print(f"DEBUG: Fetching reviews for canteen ID: {canteen_id}")
+        reviews = Review.objects.filter(canteen_id=canteen_id).order_by('-created_at')
+        serializer = ReviewSerializer(reviews, many=True)
+        return Response(serializer.data)

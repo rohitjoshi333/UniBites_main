@@ -34,7 +34,7 @@ export const initiateEsewaPayment = async () => {
     return response.data;
 };
 
-export const rateOrder = async (orderId: number, rating: number) => {
-    const response = await api.post(`orders/${orderId}/rate/`, { rating });
+export const rateOrder = async (orderId: number, rating: number, message?: string) => {
+    const response = await api.post(`orders/${orderId}/rate/`, { rating, message });
     return response.data;
 };

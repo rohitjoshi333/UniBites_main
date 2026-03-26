@@ -190,7 +190,7 @@ const VendorDashboard = () => {
         <div className="dashboard-page">
             <header className="page-header">
                 <div>
-                    <h1 className="page-title">Dashboard Overview</h1>
+                    <h1 className="page-title">{stats.canteenName ? `${stats.canteenName} Dashboard` : 'Dashboard Overview'}</h1>
                     <p className="login-subtitle">Monitor and manage your canteen performance</p>
                 </div>
             </header>

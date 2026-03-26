@@ -83,6 +83,7 @@ class Review(models.Model):
     canteen = models.ForeignKey(Canteen, on_delete=models.CASCADE, related_name='reviews')
     order = models.OneToOneField('orders.Order', on_delete=models.CASCADE, related_name='review')
     rating = models.IntegerField(choices=[(i, i) for i in range(1, 6)])
+    message = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def save(self, *args, **kwargs):

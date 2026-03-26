@@ -18,12 +18,14 @@ from .views import (
     BannerListView,
     BannerViewSet,
     UploadBannerImageView,
+    CanteenReviewListView,
 )
 
 router = DefaultRouter()
 router.register(r'admin/banners', BannerViewSet, basename='admin-banners')
 
 urlpatterns = [
+    path("canteens/<int:canteen_id>/reviews/", CanteenReviewListView.as_view()),
     path("register/", RegisterView.as_view()),
     path("verify-otp/", VerifyOtpView.as_view()),
     path("resend-otp/", ResendOtpView.as_view()),

@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.utils import timezone
 from datetime import timedelta
-from .models import User, Canteen, Banner
+from .models import User, Canteen, Banner, Review
 import random
 
 class BannerSerializer(serializers.ModelSerializer):
@@ -159,6 +159,14 @@ class ResetPasswordSerializer(serializers.Serializer):
         if user.otp_expires_at and user.otp_expires_at < timezone.now():
             raise serializers.ValidationError("OTP has expired.")
         return data
+
+class ReviewSerializer(serializers.ModelSerializer):
+    user_name = serializers.CharField(source='user.full_name', read_only=True)
+
+    class Meta:
+        model = Review
+        fields = ["id", "user_name", "rating", "message", "created_at"]
+        read_only_fields = ["id", "created_at"]
 
 class CanteenSerializer(serializers.ModelSerializer):
     vendor_name = serializers.CharField(source='vendor.full_name', read_only=True)

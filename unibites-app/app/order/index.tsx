@@ -9,6 +9,7 @@ import {
     RefreshControl,
     Alert,
     Modal,
+    TextInput,
 } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -121,6 +122,7 @@ export default function OrdersScreen() {
     const [ratingOrder, setRatingOrder] = useState<any>(null);
     const [hasRated, setHasRated] = useState(false);
     const [selectedRating, setSelectedRating] = useState(0);
+    const [message, setMessage] = useState('');
     const [dismissedRatings, setDismissedRatings] = useState<Set<number>>(new Set());
 
     const wsRef = useRef<WebSocket | null>(null);
@@ -226,6 +228,7 @@ export default function OrdersScreen() {
         setRatingOrder(null);
         setHasRated(false);
         setSelectedRating(0);
+        setMessage('');
     };
 
     const handleRateSubmit = async () => {
@@ -235,7 +238,7 @@ export default function OrdersScreen() {
         }
         if (ratingOrder) {
             try {
-                await rateOrder(ratingOrder.id, selectedRating);
+                await rateOrder(ratingOrder.id, selectedRating, message);
                 setHasRated(true);
                 const newDismissed = new Set(dismissedRatings).add(ratingOrder.id);
                 setDismissedRatings(newDismissed);
@@ -356,6 +359,16 @@ export default function OrdersScreen() {
                                         </TouchableOpacity>
                                     ))}
                                 </View>
+
+                                <TextInput
+                                    style={styles.ratingInput}
+                                    placeholder="Tell us more about your experience (optional)"
+                                    placeholderTextColor="#94A3B8"
+                                    multiline
+                                    numberOfLines={3}
+                                    value={message}
+                                    onChangeText={setMessage}
+                                />
 
                                 <TouchableOpacity
                                     style={styles.premiumRateBtn}
@@ -747,8 +760,21 @@ const styles = StyleSheet.create({
     },
 
     premiumCloseBtnText: {
-        color: '#94A3B8',
-        fontWeight: '600',
-        fontSize: 15,
+        color: "#64748B",
+        fontSize: 14,
+        fontWeight: "600",
+    },
+    ratingInput: {
+        width: '100%',
+        backgroundColor: '#F8FAFC',
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+        borderRadius: 12,
+        padding: 12,
+        fontSize: 14,
+        color: '#1E293B',
+        minHeight: 80,
+        textAlignVertical: 'top',
+        marginBottom: 20,
     },
 });

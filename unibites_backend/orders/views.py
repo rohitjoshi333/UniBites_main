@@ -199,6 +199,7 @@ class RateOrderView(APIView):
             return Response({"error": "This order has already been rated."}, status=400)
 
         rating = request.data.get('rating')
+        message = request.data.get('message')
         if not rating:
             return Response({"error": "Rating is required."}, status=400)
 
@@ -214,7 +215,8 @@ class RateOrderView(APIView):
             user=request.user,
             canteen=order.canteen,
             order=order,
-            rating=rating
+            rating=rating,
+            message=message
         )
 
         order.is_rated = True
