@@ -54,7 +54,7 @@ class OrderSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'canteen_name', 'user_info',
             'total_price', 'payment_method', 'payment_status', 'status',
-            'created_at', 'items',
+            'scheduled_time', 'created_at', 'items',
         ]
 
     def get_user_info(self, obj):

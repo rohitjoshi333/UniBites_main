@@ -4,15 +4,52 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from django.shortcuts import get_object_or_404
 from django.conf import settings
+from django.utils import timezone
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 import uuid
+from datetime import datetime, timedelta
 from .models import Cart, CartItem, Order, OrderItem
 from menu.models import MenuItem
 from .serializers import CartSerializer, OrderSerializer
 from .esewa import generate_signature, verify_esewa_response
 
 channel_layer = get_channel_layer()
+
+
+def parse_and_validate_scheduled_time(scheduled_time_str):
+
+    # Validates the scheduled_time from request data.
+    
+    if not scheduled_time_str:
+        return None, None  # No scheduling requested — that's fine
+
+    try:
+        scheduled_time = datetime.fromisoformat(scheduled_time_str.replace('Z', '+00:00'))
+        # Convert to UTC aware if naive
+        if scheduled_time.tzinfo is None:
+            scheduled_time = timezone.make_aware(scheduled_time)
+    except (ValueError, TypeError):
+        return None, "Invalid scheduled_time format. Use ISO 8601."
+
+    now = timezone.now()
+    min_time = now + timedelta(minutes=10)
+
+    if scheduled_time < min_time:
+        return None, "Scheduled time must be at least 10 minutes from now."
+
+    # Same-day check (in local time).
+    local_now = timezone.localtime(now)
+    local_scheduled = timezone.localtime(scheduled_time)
+    if local_scheduled.date() != local_now.date():
+        return None, "Scheduling is only allowed for today."
+
+    # Closing time cap: 6:30 PM local (commented for testing)
+    # closing_hour, closing_minute = 18, 30
+    # if (local_scheduled.hour, local_scheduled.minute) > (closing_hour, closing_minute):
+    #     return None, "Scheduled time cannot be after 6:30 PM."
+
+    return scheduled_time, None
 
 
 
@@ -111,13 +148,21 @@ class PlaceOrderView(APIView):
         if not canteen:
             return Response({"error": "Unable to determine canteen from cart."}, status=400)
 
+        # Validate optional scheduled_time
+        scheduled_time_str = request.data.get('scheduled_time')
+        scheduled_time, err = parse_and_validate_scheduled_time(scheduled_time_str)
+        if err:
+            return Response({"error": err}, status=400)
+
+        payment_method = request.data.get('payment_method', 'CASH_ON_ARRIVAL')
         total_price = cart.total_price
 
         order = Order.objects.create(
             user=request.user,
             canteen=canteen,
             total_price=total_price,
-            payment_method='CASH_ON_ARRIVAL',
+            payment_method=payment_method,
+            scheduled_time=scheduled_time,
             status=Order.Status.PENDING,
         )
 
@@ -327,6 +372,12 @@ class EsewaInitiateView(APIView):
         total_price = cart.total_price
         transaction_uuid = f"unibites-{uuid.uuid4().hex[:16]}"
 
+        # Validate optional scheduled_time
+        scheduled_time_str = request.data.get('scheduled_time')
+        scheduled_time, err = parse_and_validate_scheduled_time(scheduled_time_str)
+        if err:
+            return Response({"error": err}, status=400)
+
         # Create a pending-payment order
         order = Order.objects.create(
             user=request.user,
@@ -335,6 +386,7 @@ class EsewaInitiateView(APIView):
             payment_method='ESEWA',
             payment_status=Order.PaymentStatus.PENDING_PAYMENT,
             payment_ref_id=transaction_uuid,
+            scheduled_time=scheduled_time,
             status=Order.Status.PENDING,
         )
 

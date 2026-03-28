@@ -53,7 +53,7 @@ const StatusStepper = ({ status }) => {
 };
 
 const OrderCard = ({ order, onStatusUpdate }) => {
-    const [expanded, setExpanded] = useState(false);
+    const [expanded, setExpanded] = useState(true);
     const [updating, setUpdating] = useState(false);
     const cfg = STATUS_CONFIG[order.status] || STATUS_CONFIG.PENDING;
     const actions = ACTION_MAP[order.status] || [];
@@ -77,6 +77,10 @@ const OrderCard = ({ order, onStatusUpdate }) => {
     const dateStr = date.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
     const timeStr = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 
+    const scheduledStr = order.scheduled_time
+        ? new Date(order.scheduled_time).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+        : null;
+
     return (
         <div className={`order-card-compact ${order.status === 'PENDING' ? 'pulse-pending' : ''}`}>
 
@@ -85,6 +89,9 @@ const OrderCard = ({ order, onStatusUpdate }) => {
                     <span className="occ-id">#{order.id}</span>
                     <span className="occ-date">{dateStr} · {timeStr}</span>
                     <span className={`badge ${cfg.className}`}>{cfg.label}</span>
+                    {scheduledStr && (
+                        <span className="badge-scheduled">Pickup {scheduledStr}</span>
+                    )}
                 </div>
                 <div className="occ-top-right">
                     {order.payment_method === 'ESEWA' ? (
@@ -112,12 +119,14 @@ const OrderCard = ({ order, onStatusUpdate }) => {
                 )}
             </div>
 
+            // Scheduled time is already displayed inline above
+
             {expanded && (
                 <div className="occ-items">
                     <div className="occ-items-header">Order Items</div>
                     {order.items.map((item) => (
                         <div key={item.id} className="occ-item-row">
-                            <span className="occ-item-qty">{item.quantity}×</span>
+                            <span className="occ-item-qty">{item.quantity}&times;</span>
                             <span className="occ-item-name">{item.menu_item_name}</span>
                             <span className="occ-item-price">Rs. {item.subtotal}</span>
                         </div>
@@ -128,7 +137,7 @@ const OrderCard = ({ order, onStatusUpdate }) => {
             <div className="occ-bottom">
                 <button className="occ-expand" onClick={() => setExpanded(!expanded)}>
                     {expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                    {order.items.length} item(s)
+                    {expanded ? 'Hide items' : `${order.items.length} item(s)`}
                 </button>
 
                 {actions.length > 0 && (

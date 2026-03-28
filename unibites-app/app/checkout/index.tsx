@@ -14,12 +14,69 @@ import { Ionicons } from '@expo/vector-icons';
 import { getCart } from '../../services/cartService';
 import { placeOrder, initiateEsewaPayment } from '../../services/orderService';
 
+const MIN_LEAD_MINUTES = 15;
+
+function getMinPickupDate(): Date {
+    const d = new Date();
+    d.setSeconds(0, 0);
+    d.setMinutes(d.getMinutes() + MIN_LEAD_MINUTES);
+    return d;
+}
+
+function formatTime(h: number, m: number): string {
+    const period = h >= 12 ? 'PM' : 'AM';
+    const displayH = h > 12 ? h - 12 : h === 0 ? 12 : h;
+    const displayM = m < 10 ? `0${m}` : `${m}`;
+    return `${displayH}:${displayM} ${period}`;
+}
+
 const CheckoutScreen = () => {
     const router = useRouter();
     const [cart, setCart] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [placing, setPlacing] = useState(false);
     const [paymentMethod, setPaymentMethod] = useState<'CASH_ON_ARRIVAL' | 'ESEWA'>('CASH_ON_ARRIVAL');
+
+    // Scheduler state
+    const [scheduleEnabled, setScheduleEnabled] = useState(false);
+
+    // Custom time picker state default to now + 15 min and also rounded up to next 15-min mark
+    const getDefaultPickerTime = () => {
+        const min = getMinPickupDate();
+        const roundedMin = Math.ceil(min.getMinutes() / 15) * 15;
+        if (roundedMin >= 60) {
+            return { hour: min.getHours() + 1, minute: 0 };
+        }
+        return { hour: min.getHours(), minute: roundedMin };
+    };
+    const [pickerHour, setPickerHour] = useState(() => getDefaultPickerTime().hour);
+    const [pickerMinute, setPickerMinute] = useState(() => getDefaultPickerTime().minute);
+
+    const getPickerDate = () => {
+        const d = new Date();
+        d.setHours(pickerHour, pickerMinute, 0, 0);
+        return d;
+    };
+
+    const isPickerTimeValid = () => {
+        return getPickerDate().getTime() >= getMinPickupDate().getTime();
+    };
+
+    const adjustHour = (delta: number) => {
+        setPickerHour(h => {
+            const next = (h + delta + 24) % 24;
+            return next;
+        });
+    };
+
+    const adjustMinute = (delta: number) => {
+        setPickerMinute(m => {
+            let next = m + delta * 15;
+            if (next >= 60) { next = 0; setPickerHour(h => (h + 1) % 24); }
+            if (next < 0) { next = 45; setPickerHour(h => (h - 1 + 24) % 24); }
+            return next;
+        });
+    };
 
     const fetchCart = async () => {
         try {
@@ -36,6 +93,12 @@ const CheckoutScreen = () => {
         fetchCart();
     }, []);
 
+    const getScheduledTimeISO = (): string | undefined => {
+        if (!scheduleEnabled) return undefined;
+        if (!isPickerTimeValid()) return undefined;
+        return getPickerDate().toISOString();
+    };
+
     const handleConfirmOrder = async () => {
         if (!cart || !cart.items || cart.items.length === 0) {
             Alert.alert('Empty Cart', 'Please add items to your cart before placing an order.');
@@ -43,12 +106,18 @@ const CheckoutScreen = () => {
             return;
         }
 
+        if (scheduleEnabled && !isPickerTimeValid()) {
+            Alert.alert('Invalid Time', `Pickup time must be at least ${MIN_LEAD_MINUTES} minutes from now.`);
+            return;
+        }
+
         setPlacing(true);
         try {
+            const scheduledTime = getScheduledTimeISO();
             if (paymentMethod === 'ESEWA') {
-                await handleEsewaPayment();
+                await handleEsewaPayment(scheduledTime);
             } else {
-                const order = await placeOrder();
+                const order = await placeOrder(scheduledTime);
                 router.replace({ pathname: '/order-success' as any, params: { orderId: order.id } });
             }
         } catch (error: any) {
@@ -59,12 +128,9 @@ const CheckoutScreen = () => {
         }
     };
 
-    const handleEsewaPayment = async () => {
-        // Asks backend to create order & get eSewa form params
-        const res = await initiateEsewaPayment();
+    const handleEsewaPayment = async (scheduledTime?: string) => {
+        const res = await initiateEsewaPayment(scheduledTime);
         const { esewa_url, form_params, order_id } = res;
-
-        // Navigates to our custom WebView screen via exporouter
         router.push({
             pathname: '/esewa-payment',
             params: {
@@ -85,6 +151,15 @@ const CheckoutScreen = () => {
 
     const hasItems = cart && cart.items && cart.items.length > 0;
 
+    const confirmBtnLabel = () => {
+        if (paymentMethod === 'ESEWA') {
+            if (scheduleEnabled && isPickerTimeValid()) return `Pay with eSewa \u2022 ${formatTime(pickerHour, pickerMinute)}`;
+            return 'Pay with eSewa';
+        }
+        if (scheduleEnabled && isPickerTimeValid()) return `Schedule for ${formatTime(pickerHour, pickerMinute)}`;
+        return 'Confirm Order';
+    };
+
     return (
         <View style={styles.container}>
             <View style={styles.header}>
@@ -95,15 +170,14 @@ const CheckoutScreen = () => {
                 <View style={{ width: 36 }} />
             </View>
 
-            <View style={styles.mainContent}>
-                <View style={[styles.section, { flex: 1 }]}>
+            <View style={{ flexShrink: 0, zIndex: 10 }}>
+
+                {/* Order Summary */}
+                <View style={styles.section}>
                     <Text style={styles.sectionTitle}>Order Summary</Text>
                     {hasItems ? (
                         <>
-                            <ScrollView 
-                                style={styles.itemListScroll}
-                                showsVerticalScrollIndicator={false}
-                            >
+                            <ScrollView style={{ maxHeight: 180 }} nestedScrollEnabled showsVerticalScrollIndicator={false}>
                                 {cart.items.map((item: any) => (
                                     <View key={item.id} style={styles.itemRow}>
                                         <Image
@@ -118,7 +192,6 @@ const CheckoutScreen = () => {
                                     </View>
                                 ))}
                             </ScrollView>
-
                             <View style={styles.divider} />
                             <View style={styles.totalRow}>
                                 <Text style={styles.totalLabel}>Total</Text>
@@ -130,8 +203,9 @@ const CheckoutScreen = () => {
                     )}
                 </View>
 
+                {/* Pickup From */}
                 {cart?.canteen && (
-                    <View style={[styles.section, styles.fixedSection]}>
+                    <View style={styles.section}>
                         <Text style={styles.sectionTitle}>Pickup From</Text>
                         <View style={styles.infoRow}>
                             <Ionicons name="storefront-outline" size={20} color="#E85D3A" />
@@ -140,10 +214,81 @@ const CheckoutScreen = () => {
                     </View>
                 )}
 
-                <View style={[styles.section, styles.fixedSection]}>
+            </View>
+
+            <ScrollView contentContainerStyle={[styles.scrollContent, { paddingBottom: 120 }]} showsVerticalScrollIndicator={false}>
+
+                {/* ── Schedule Order ── */}
+                <View style={styles.section}>
+                    <View style={styles.scheduleHeader}>
+                        <View style={styles.scheduleHeaderLeft}>
+                            <View style={styles.scheduleIcon}>
+                                <Ionicons name="time-outline" size={20} color="#7C3AED" />
+                            </View>
+                            <View>
+                                <Text style={styles.sectionTitle}>Schedule Order</Text>
+                                <Text style={styles.scheduleSubtitle}>Pre-order for a later pickup today</Text>
+                            </View>
+                        </View>
+                        <TouchableOpacity
+                            style={[styles.toggle, scheduleEnabled && styles.toggleOn]}
+                            onPress={() => {
+                                setScheduleEnabled(v => !v);
+                            }}
+                            activeOpacity={0.8}
+                        >
+                            <View style={[styles.toggleThumb, scheduleEnabled && styles.toggleThumbOn]} />
+                        </TouchableOpacity>
+                    </View>
+
+                    {scheduleEnabled && (
+                        <View style={styles.timePicker}>
+                            {/* Hour */}
+                            <View style={styles.timeCol}>
+                                <TouchableOpacity style={styles.timeBtn} onPress={() => adjustHour(1)}>
+                                    <Ionicons name="chevron-up" size={20} color="#7C3AED" />
+                                </TouchableOpacity>
+                                <Text style={styles.timeDigit}>
+                                    {pickerHour > 12 ? pickerHour - 12 : pickerHour === 0 ? 12 : pickerHour}
+                                </Text>
+                                <TouchableOpacity style={styles.timeBtn} onPress={() => adjustHour(-1)}>
+                                    <Ionicons name="chevron-down" size={20} color="#7C3AED" />
+                                </TouchableOpacity>
+                            </View>
+                            <Text style={styles.timeSep}>:</Text>
+                            {/* Minute */}
+                            <View style={styles.timeCol}>
+                                <TouchableOpacity style={styles.timeBtn} onPress={() => adjustMinute(1)}>
+                                    <Ionicons name="chevron-up" size={20} color="#7C3AED" />
+                                </TouchableOpacity>
+                                <Text style={styles.timeDigit}>{pickerMinute < 10 ? `0${pickerMinute}` : pickerMinute}</Text>
+                                <TouchableOpacity style={styles.timeBtn} onPress={() => adjustMinute(-1)}>
+                                    <Ionicons name="chevron-down" size={20} color="#7C3AED" />
+                                </TouchableOpacity>
+                            </View>
+                            {/* AM/PM */}
+                            <Text style={styles.timeAmPm}>{pickerHour >= 12 ? 'PM' : 'AM'}</Text>
+                        </View>
+                    )}
+                    {scheduleEnabled && !isPickerTimeValid() && (
+                        <Text style={styles.timeWarning}>
+                            Minimum {MIN_LEAD_MINUTES} min lead time required
+                        </Text>
+                    )}
+                    {scheduleEnabled && isPickerTimeValid() && (
+                        <View style={styles.selectedSlotBanner}>
+                            <Ionicons name="checkmark-circle" size={16} color="#7C3AED" />
+                            <Text style={styles.selectedSlotText}>
+                                Order will be ready at {formatTime(pickerHour, pickerMinute)}
+                            </Text>
+                        </View>
+                    )}
+                </View>
+
+                {/* Payment Method */}
+                <View style={styles.section}>
                     <Text style={styles.sectionTitle}>Payment Method</Text>
 
-                    {/* Cash on Arrival Option */}
                     <TouchableOpacity
                         style={[styles.paymentCard, paymentMethod === 'CASH_ON_ARRIVAL' && styles.paymentCardSelected]}
                         onPress={() => setPaymentMethod('CASH_ON_ARRIVAL')}
@@ -161,7 +306,6 @@ const CheckoutScreen = () => {
                         )}
                     </TouchableOpacity>
 
-                    {/* eSewa Option */}
                     <TouchableOpacity
                         style={[styles.paymentCard, styles.esewaCard, paymentMethod === 'ESEWA' && styles.paymentCardSelected, { marginTop: 10 }]}
                         onPress={() => setPaymentMethod('ESEWA')}
@@ -179,10 +323,11 @@ const CheckoutScreen = () => {
                         )}
                     </TouchableOpacity>
                 </View>
-            </View>
 
+                <View style={{ height: 20 }} />
+            </ScrollView>
 
-
+            {/* Footer */}
             <View style={styles.footer}>
                 <View style={styles.footerTotal}>
                     <Text style={styles.footerLabel}>Total</Text>
@@ -198,11 +343,15 @@ const CheckoutScreen = () => {
                         <ActivityIndicator color="#fff" size="small" />
                     ) : (
                         <>
-                            <Text style={styles.confirmText}>
-                                {paymentMethod === 'ESEWA' ? 'Pay with eSewa' : 'Confirm Order'}
-                            </Text>
+                            <Text style={styles.confirmText}>{confirmBtnLabel()}</Text>
                             <Ionicons
-                                name={paymentMethod === 'ESEWA' ? 'phone-portrait-outline' : 'checkmark-circle-outline'}
+                                name={
+                                    scheduleEnabled && isPickerTimeValid()
+                                        ? 'alarm-outline'
+                                        : paymentMethod === 'ESEWA'
+                                            ? 'phone-portrait-outline'
+                                            : 'checkmark-circle-outline'
+                                }
                                 size={22}
                                 color="#fff"
                                 style={{ marginLeft: 8 }}
@@ -228,17 +377,8 @@ const styles = StyleSheet.create({
         backgroundColor: "#F3F4F6",
     },
 
-    mainContent: {
-        flex: 1,
-        paddingBottom: 160, // Space for footer
-    },
-
-    itemListScroll: {
-        flex: 1,
-    },
-
-    fixedSection: {
-        marginTop: 12,
+    scrollContent: { 
+        paddingBottom: 20 
     },
 
     header: {
@@ -285,7 +425,7 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: "700",
         color: "#1E293B",
-        marginBottom: 14,
+        marginBottom: 0,
     },
 
     itemRow: {
@@ -359,12 +499,133 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         alignItems: "center",
         gap: 10,
+        marginTop: 4
     },
 
     infoText: {
         fontSize: 15,
         fontWeight: "600",
         color: "#1E293B",
+    },
+
+    // Scheduler 
+    scheduleHeader: {
+        flexDirection: 'row', 
+        alignItems: 'center',
+        justifyContent: 'space-between', 
+        marginBottom: 0,
+    },
+
+    scheduleHeaderLeft: { 
+        flexDirection: 'row', 
+        alignItems: 'center', 
+        gap: 12 },
+
+    scheduleIcon: {
+        width: 38, 
+        height: 38, 
+        borderRadius: 19,
+        backgroundColor: '#EDE9FE', 
+        justifyContent: 'center', 
+        alignItems: 'center',
+    },
+
+    scheduleSubtitle: { 
+        fontSize: 12, 
+        color: '#94A3B8', 
+        marginTop: 2 
+    },
+
+    toggle: {
+        width: 50, 
+        height: 28, 
+        borderRadius: 14,
+        backgroundColor: '#CBD5E1', 
+        padding: 3,
+        justifyContent: 'center',
+    },
+
+    toggleOn: { 
+        backgroundColor: '#7C3AED' 
+    },
+
+    toggleThumb: {
+        width: 22, 
+        height: 22, 
+        borderRadius: 11, 
+        backgroundColor: '#fff',
+        shadowColor: '#000', 
+        shadowOpacity: 0.2, 
+        shadowRadius: 2, 
+        elevation: 2,
+        alignSelf: 'flex-start',
+    },
+    toggleThumbOn: { alignSelf: 'flex-end' },
+
+    slotLabel: { 
+        fontSize: 13, 
+        color: '#64748B', 
+        marginTop: 14, 
+        marginBottom: 10 
+    },
+
+    slotScroll: { 
+        marginHorizontal: -4 
+    },
+
+    slotRow: { 
+        flexDirection: 'row', 
+        gap: 8, 
+        paddingHorizontal: 4 
+    },
+
+    slotChip: {
+        flexDirection: 'row', 
+        alignItems: 'center',
+        backgroundColor: '#EDE9FE',
+        paddingHorizontal: 14, 
+        paddingVertical: 8,
+        borderRadius: 20, 
+        borderWidth: 1.5, 
+        borderColor: '#7C3AED22',
+    },
+
+    slotChipSelected: { 
+        backgroundColor: '#7C3AED', 
+        borderColor: '#7C3AED' 
+    },
+
+    slotText: { 
+        fontSize: 13, 
+        fontWeight: '600', 
+        color: '#7C3AED' 
+    },
+
+    slotTextSelected: { 
+        color: '#fff' 
+    },
+
+    selectedSlotBanner: {
+        flexDirection: 'row', 
+        alignItems: 'center', 
+        gap: 6,
+        backgroundColor: '#EDE9FE', 
+        borderRadius: 10,
+        paddingVertical: 10, 
+        paddingHorizontal: 14, 
+        marginTop: 12,
+    },
+
+    selectedSlotText: { 
+        fontSize: 13, 
+        fontWeight: '600', 
+        color: '#7C3AED' 
+    },
+
+    noSlotsText: { 
+        fontSize: 13, 
+        color: '#94A3B8', 
+        marginTop: 12 
     },
 
     paymentCard: {
@@ -377,7 +638,6 @@ const styles = StyleSheet.create({
         borderColor: "#FECACA",
         gap: 12,
     },
-
     paymentIcon: {
         width: 44,
         height: 44,
@@ -386,7 +646,6 @@ const styles = StyleSheet.create({
         justifyContent: "center",
         alignItems: "center",
     },
-
     paymentInfo: {
         flex: 1,
     },
@@ -401,6 +660,23 @@ const styles = StyleSheet.create({
         fontSize: 12,
         color: "#64748B",
         marginTop: 2,
+    },
+
+    paymentCardSelected: { 
+        borderColor: '#10B981', 
+        borderWidth: 2, 
+        backgroundColor: '#F0FDF4' 
+    },
+
+    esewaCard: { 
+        borderColor: '#60C271' 
+    },
+
+    esewaLogo: { 
+        fontSize: 22, 
+        fontWeight: '900', 
+        color: '#60C271', 
+        fontStyle: 'italic' 
     },
 
     footer: {
@@ -419,7 +695,6 @@ const styles = StyleSheet.create({
         shadowRadius: 10,
         elevation: 12,
     },
-
     footerTotal: {
         flexDirection: "row",
         justifyContent: "space-between",
@@ -436,7 +711,6 @@ const styles = StyleSheet.create({
         fontWeight: "800",
         color: "#1E293B",
     },
-
     confirmBtn: {
         backgroundColor: "#E85D3A",
         borderRadius: 14,
@@ -450,7 +724,6 @@ const styles = StyleSheet.create({
         shadowRadius: 8,
         elevation: 5,
     },
-
     confirmBtnDisabled: {
         backgroundColor: "#CBD5E1",
         shadowOpacity: 0,
@@ -462,21 +735,55 @@ const styles = StyleSheet.create({
         fontWeight: "bold",
     },
 
-    paymentCardSelected: {
-        borderColor: "#10B981",
-        borderWidth: 2,
-        backgroundColor: "#F0FDF4",
+    // Custom time picker
+    timePicker: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+        marginTop: 12,
+        marginBottom: 4,
+        paddingVertical: 12,
+        backgroundColor: '#F8F7FF',
+        borderRadius: 14,
+        borderWidth: 1,
+        borderColor: '#DDD6FE',
     },
-
-    esewaCard: {
-        borderColor: "#60C271",
+    timeCol: {
+        alignItems: 'center',
+        gap: 4,
+        minWidth: 54,
     },
-
-    esewaLogo: {
-        fontSize: 22,
-        fontWeight: '900',
-        color: '#60C271',
-        fontStyle: 'italic',
+    timeBtn: {
+        padding: 6,
+        borderRadius: 8,
+        backgroundColor: '#EDE9FE',
+    },
+    timeDigit: {
+        fontSize: 32,
+        fontWeight: '800',
+        color: '#4C1D95',
+        lineHeight: 38,
+        minWidth: 44,
+        textAlign: 'center',
+    },
+    timeSep: {
+        fontSize: 32,
+        fontWeight: '800',
+        color: '#7C3AED',
+        marginBottom: 4,
+    },
+    timeAmPm: {
+        fontSize: 18,
+        fontWeight: '700',
+        color: '#7C3AED',
+        marginLeft: 4,
+    },
+    timeWarning: {
+        fontSize: 13,
+        color: '#DC2626',
+        marginTop: 8,
+        textAlign: 'center',
     },
 });
 

@@ -28,7 +28,7 @@ const STATUS_CONFIG: Record<string, { color: string; bg: string; icon: any }> = 
 };
 
 const OrderCard = ({ order, onCancel }: { order: any; onCancel: (id: number) => void }) => {
-    const [expanded, setExpanded] = useState(false);
+    const [expanded, setExpanded] = useState(true);
     const statusCfg = STATUS_CONFIG[order.status] || STATUS_CONFIG.PENDING;
     const date = new Date(order.created_at);
     const dateStr = date.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
@@ -36,6 +36,10 @@ const OrderCard = ({ order, onCancel }: { order: any; onCancel: (id: number) => 
     const firstItemName = order.items && order.items.length > 0 ? order.items[0].menu_item_name : 'Order';
     const extraCount = order.items ? order.items.length - 1 : 0;
     const orderTitle = extraCount > 0 ? `${firstItemName} +${extraCount}` : firstItemName;
+
+    const scheduledStr = order.scheduled_time
+        ? new Date(order.scheduled_time).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+        : null;
 
     return (
         <View style={styles.card}>
@@ -72,6 +76,17 @@ const OrderCard = ({ order, onCancel }: { order: any; onCancel: (id: number) => 
                 <Text style={styles.totalText}>Rs. {order.total_price}</Text>
             </View>
 
+
+            {/* Scheduled order banner */}
+            {scheduledStr && (
+                <View style={styles.scheduledBanner}>
+                    <Ionicons name="alarm-outline" size={15} color="#7C3AED" />
+                    <View style={{ flex: 1 }}>
+                        <Text style={styles.scheduledLabel}>Scheduled Pickup</Text>
+                        <Text style={styles.scheduledTime}>Ready by {scheduledStr}</Text>
+                    </View>
+                </View>
+            )}
 
             <TouchableOpacity style={styles.expandBtn} onPress={() => setExpanded(!expanded)}>
                 <Text style={styles.expandText}>{expanded ? 'Hide items' : `Show ${order.items.length} item(s)`}</Text>
@@ -661,6 +676,32 @@ const styles = StyleSheet.create({
         color: "#fff",
         fontWeight: "700",
         fontSize: 15,
+    },
+
+    scheduledBanner: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
+        backgroundColor: '#EDE9FE',
+        borderRadius: 10,
+        paddingVertical: 10,
+        paddingHorizontal: 12,
+        marginBottom: 10,
+    },
+
+    scheduledLabel: {
+        fontSize: 11,
+        fontWeight: '700',
+        color: '#7C3AED',
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
+    },
+
+    scheduledTime: {
+        fontSize: 13,
+        fontWeight: '600',
+        color: '#5B21B6',
+        marginTop: 1,
     },
 
     cancelBtn: {

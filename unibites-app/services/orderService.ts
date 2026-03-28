@@ -14,8 +14,10 @@ api.interceptors.request.use(async (config) => {
     return config;
 });
 
-export const placeOrder = async () => {
-    const response = await api.post('orders/place/');
+export const placeOrder = async (scheduledTime?: string) => {
+    const body: any = {};
+    if (scheduledTime) body.scheduled_time = scheduledTime;
+    const response = await api.post('orders/place/', body);
     return response.data;
 };
 
@@ -29,8 +31,10 @@ export const cancelOrder = async (orderId: number) => {
     return response.data;
 };
 
-export const initiateEsewaPayment = async () => {
-    const response = await api.post('orders/esewa/initiate/');
+export const initiateEsewaPayment = async (scheduledTime?: string) => {
+    const body: any = {};
+    if (scheduledTime) body.scheduled_time = scheduledTime;
+    const response = await api.post('orders/esewa/initiate/', body);
     return response.data;
 };
 
