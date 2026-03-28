@@ -14,8 +14,9 @@ from .serializers import (
     ChangePasswordSerializer,
     BannerSerializer,
     ReviewSerializer,
+    NotificationSerializer,
 )
-from .models import User, Canteen, Banner, Review
+from .models import User, Canteen, Banner, Review, Notification
 from django.utils import timezone
 from datetime import timedelta
 import random
@@ -402,3 +403,38 @@ class CanteenReviewListView(APIView):
         reviews = Review.objects.filter(canteen_id=canteen_id).order_by('-created_at')
         serializer = ReviewSerializer(reviews, many=True)
         return Response(serializer.data)
+
+
+class NotificationListView(APIView):
+    """
+    GET /api/notifications/
+    Returns all notifications for the authenticated user based on created_at desc.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        notifications = request.user.notifications.all()
+        serializer = NotificationSerializer(notifications, many=True)
+        return Response(serializer.data)
+
+
+class NotificationMarkReadView(APIView):
+    """
+    PATCH /api/notifications/mark-read/
+    Body: {"id": <notification_id_or_empty>} if 'id' is provided, marks that specific notification as read, if 'id' is not provided, marks all user's notifications as read.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def patch(self, request):
+        notification_id = request.data.get('id')
+        if notification_id:
+            try:
+                notification = request.user.notifications.get(id=notification_id)
+                notification.is_read = True
+                notification.save(update_fields=['is_read'])
+                return Response({"message": "Notification marked as read."}, status=200)
+            except Exception:
+                return Response({"error": "Notification not found."}, status=404)
+        else:
+            request.user.notifications.filter(is_read=False).update(is_read=True)
+            return Response({"message": "All notifications marked as read."}, status=200)

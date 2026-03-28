@@ -44,6 +44,13 @@ class OrderConsumer(AsyncWebsocketConsumer):
         from django.core.serializers.json import DjangoJSONEncoder
         await self.send(text_data=json.dumps(event['data'], cls=DjangoJSONEncoder))
 
+    async def notification(self, event):
+        from django.core.serializers.json import DjangoJSONEncoder
+        await self.send(text_data=json.dumps({
+            "type": "notification",
+            "data": event['data'],
+        }, cls=DjangoJSONEncoder))
+
     # helpers
 
     async def _authenticate(self):

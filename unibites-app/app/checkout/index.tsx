@@ -14,7 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { getCart } from '../../services/cartService';
 import { placeOrder, initiateEsewaPayment } from '../../services/orderService';
 
-const MIN_LEAD_MINUTES = 15;
+const MIN_LEAD_MINUTES = 5;
 
 function getMinPickupDate(): Date {
     const d = new Date();
@@ -40,14 +40,9 @@ const CheckoutScreen = () => {
     // Scheduler state
     const [scheduleEnabled, setScheduleEnabled] = useState(false);
 
-    // Custom time picker state default to now + 15 min and also rounded up to next 15-min mark
     const getDefaultPickerTime = () => {
         const min = getMinPickupDate();
-        const roundedMin = Math.ceil(min.getMinutes() / 15) * 15;
-        if (roundedMin >= 60) {
-            return { hour: min.getHours() + 1, minute: 0 };
-        }
-        return { hour: min.getHours(), minute: roundedMin };
+        return { hour: min.getHours(), minute: min.getMinutes() };
     };
     const [pickerHour, setPickerHour] = useState(() => getDefaultPickerTime().hour);
     const [pickerMinute, setPickerMinute] = useState(() => getDefaultPickerTime().minute);
@@ -71,9 +66,9 @@ const CheckoutScreen = () => {
 
     const adjustMinute = (delta: number) => {
         setPickerMinute(m => {
-            let next = m + delta * 15;
+            let next = m + delta;
             if (next >= 60) { next = 0; setPickerHour(h => (h + 1) % 24); }
-            if (next < 0) { next = 45; setPickerHour(h => (h - 1 + 24) % 24); }
+            if (next < 0) { next = 59; setPickerHour(h => (h - 1 + 24) % 24); }
             return next;
         });
     };
@@ -535,7 +530,7 @@ const styles = StyleSheet.create({
 
     scheduleIcon: {
         width: 38,
-        height: 38, 
+        height: 38,
         borderRadius: 19,
         backgroundColor: '#EDE9FE',
         justifyContent: 'center',

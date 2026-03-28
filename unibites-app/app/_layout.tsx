@@ -1,8 +1,11 @@
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
+import { AppProvider, useAppContext } from "../contexts/AppContext";
 
-export default function Layout() {
+function InnerLayout() {
+    const { activeOrderCount } = useAppContext();
+
     return (
         <>
             <StatusBar style="dark" />
@@ -38,6 +41,8 @@ export default function Layout() {
                     options={{
                         href: "/order",
                         title: "Orders",
+                        tabBarBadge: activeOrderCount > 0 ? activeOrderCount : undefined,
+                        tabBarBadgeStyle: { backgroundColor: "#EF4444", fontSize: 11 },
                         tabBarIcon: ({ color, size }) => (
                             <Ionicons name="receipt-outline" size={size} color={color} />
                         ),
@@ -64,7 +69,16 @@ export default function Layout() {
                 <Tabs.Screen name="order-success/index" options={{ href: null, tabBarStyle: { display: "none" } }} />
                 <Tabs.Screen name="esewa-payment" options={{ href: null, tabBarStyle: { display: "none" } }} />
                 <Tabs.Screen name="payment-success" options={{ href: null, tabBarStyle: { display: "none" } }} />
+                <Tabs.Screen name="notifications/index" options={{ href: null, tabBarStyle: { display: "none" } }} />
             </Tabs>
         </>
+    );
+}
+
+export default function Layout() {
+    return (
+        <AppProvider>
+            <InnerLayout />
+        </AppProvider>
     );
 }

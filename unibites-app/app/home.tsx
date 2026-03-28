@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   Image,
-  TextInput,
   ScrollView,
   TouchableOpacity,
   FlatList,
@@ -14,6 +13,7 @@ import { useRouter } from "expo-router";
 import { FontAwesome, Ionicons } from "@expo/vector-icons";
 import { API_BASE_URL } from "../constants/api";
 import * as SecureStore from "expo-secure-store";
+import { useAppContext } from "../contexts/AppContext";
 
 type Canteen = {
   id: number;
@@ -42,6 +42,9 @@ export default function HomeScreen() {
   const [banners, setBanners] = useState<Banner[]>([]);
   const [activeSlide, setActiveSlide] = useState(0);
   const flatListRef = React.useRef<any>(null);
+
+  // Global unread count lives in AppContext
+  const { unreadNotifCount } = useAppContext();
 
   useEffect(() => {
     fetchCanteens();
@@ -102,7 +105,19 @@ export default function HomeScreen() {
             source={require("../assets/images/UniBites.png")}
             style={styles.logo}
           />
-          <Ionicons name="notifications-outline" size={24} color="#333" />
+          <TouchableOpacity
+            style={styles.bellBtn}
+            onPress={() => router.push("/notifications")}
+          >
+            <Ionicons name="notifications-outline" size={26} color="#333" />
+            {unreadNotifCount > 0 && (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>
+                  {unreadNotifCount > 9 ? "9+" : unreadNotifCount}
+                </Text>
+              </View>
+            )}
+          </TouchableOpacity>
         </View>
 
         <Text style={styles.welcomeText}>
@@ -262,6 +277,31 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     resizeMode: "contain",
+  },
+
+  bellBtn: {
+    padding: 8,
+    position: "relative",
+  },
+
+  badge: {
+    position: "absolute",
+    right: 6,
+    top: 6,
+    backgroundColor: "#EF4444",
+    borderRadius: 10,
+    minWidth: 18,
+    height: 18,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1.5,
+    borderColor: "#fff",
+  },
+
+  badgeText: {
+    color: "#fff",
+    fontSize: 10,
+    fontWeight: "bold",
   },
 
   welcomeText: {

@@ -19,6 +19,8 @@ from .views import (
     BannerViewSet,
     UploadBannerImageView,
     CanteenReviewListView,
+    NotificationListView,
+    NotificationMarkReadView,
 )
 
 router = DefaultRouter()
@@ -42,5 +44,7 @@ urlpatterns = [
     path("vendor/reports/export/", VendorReportExportView.as_view()),
     path("banners/", BannerListView.as_view()),
     path("admin/banners/upload/", UploadBannerImageView.as_view()),
+    path("notifications/", NotificationListView.as_view()),
+    path("notifications/mark-read/", NotificationMarkReadView.as_view()),
     path("", include(router.urls)),
 ]

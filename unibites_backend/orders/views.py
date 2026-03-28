@@ -17,6 +17,29 @@ from .esewa import generate_signature, verify_esewa_response
 channel_layer = get_channel_layer()
 
 
+def create_and_send_notification(user, title, message, notification_type, related_order_id=None):
+    from accounts.models import Notification
+    from accounts.serializers import NotificationSerializer
+    notification = Notification.objects.create(
+        user=user,
+        title=title,
+        message=message,
+        notification_type=notification_type,
+        related_order_id=related_order_id
+    )
+    try:
+        serializer = NotificationSerializer(notification)
+        async_to_sync(channel_layer.group_send)(
+            f"user_{user.id}",
+            {
+                "type": "notification",
+                "data": serializer.data,
+            },
+        )
+    except Exception as e:
+        print(f"DEBUG: Failed to send WS notification: {e}")
+
+
 def parse_and_validate_scheduled_time(scheduled_time_str):
 
     # Validates the scheduled_time from request data.
@@ -33,21 +56,16 @@ def parse_and_validate_scheduled_time(scheduled_time_str):
         return None, "Invalid scheduled_time format. Use ISO 8601."
 
     now = timezone.now()
-    min_time = now + timedelta(minutes=10)
+    min_time = now + timedelta(minutes=5)
 
     if scheduled_time < min_time:
-        return None, "Scheduled time must be at least 10 minutes from now."
+        return None, "Scheduled time must be at least 5 minutes (testing ho hai guys chill :))"
 
     # Same-day check (in local time).
     local_now = timezone.localtime(now)
     local_scheduled = timezone.localtime(scheduled_time)
     if local_scheduled.date() != local_now.date():
         return None, "Scheduling is only allowed for today."
-
-    # Closing time cap: 6:30 PM local (commented for testing)
-    # closing_hour, closing_minute = 18, 30
-    # if (local_scheduled.hour, local_scheduled.minute) > (closing_hour, closing_minute):
-    #     return None, "Scheduled time cannot be after 6:30 PM."
 
     return scheduled_time, None
 
@@ -194,6 +212,14 @@ class PlaceOrderView(APIView):
         except Exception:
             pass  # WebSocket push HTTP response always returns
 
+        create_and_send_notification(
+            user=request.user,
+            title="Order Placed",
+            message=f"Your order at {canteen.name} has been placed successfully.",
+            notification_type="ORDER_STATUS",
+            related_order_id=order.id
+        )
+
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
@@ -223,6 +249,14 @@ class CancelOrderView(APIView):
 
         order.status = Order.Status.CANCELLED
         order.save(update_fields=['status'])
+
+        create_and_send_notification(
+            user=request.user,
+            title="Order Cancelled",
+            message=f"Your order at {order.canteen.name} has been cancelled.",
+            notification_type="ORDER_STATUS",
+            related_order_id=order.id
+        )
 
         serializer = OrderSerializer(order)
         return Response(serializer.data)
@@ -347,6 +381,14 @@ class VendorOrderStatusView(APIView):
             )
         except Exception:
             pass  # WebSocket push HTTP response always returns
+
+        create_and_send_notification(
+            user=order.user,
+            title="Order Status Updated",
+            message=f"Your order at {order.canteen.name} is now '{new_status}'.",
+            notification_type="ORDER_STATUS",
+            related_order_id=order.id
+        )
 
         return Response(serializer.data)
 
@@ -521,6 +563,14 @@ class EsewaVerifyView(APIView):
             )
         except Exception:
             pass  # WebSocket push
+
+        create_and_send_notification(
+            user=order.user,
+            title="Payment Successful",
+            message=f"Your payment for order #{order.id} was successful.",
+            notification_type="PAYMENT",
+            related_order_id=order.id
+        )
 
         # Redirect to deep link so the mobile app picks it up
         return deep_link_redirect(f"unibitesapp://payment-success?orderId={order.id}", order.id)

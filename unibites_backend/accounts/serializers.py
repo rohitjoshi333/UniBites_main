@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.utils import timezone
 from datetime import timedelta
-from .models import User, Canteen, Banner, Review
+from .models import User, Canteen, Banner, Review, Notification
 import random
 
 class BannerSerializer(serializers.ModelSerializer):
@@ -247,3 +247,18 @@ class ChangePasswordSerializer(serializers.Serializer):
             raise serializers.ValidationError("New password cannot be the same as the old password.")
             
         return data
+
+
+class NotificationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Notification
+        fields = [
+            "id",
+            "title",
+            "message",
+            "notification_type",
+            "related_order_id",
+            "is_read",
+            "created_at"
+        ]
+        read_only_fields = fields
