@@ -118,8 +118,8 @@ const OrderCard = ({ order, onStatusUpdate }) => {
                     </div>
                 )}
             </div>
-
-            // Scheduled time is already displayed inline above
+            
+            {/** Scheduled time is already displayed inline above */ }
 
             {expanded && (
                 <div className="occ-items">

@@ -34,7 +34,7 @@ type CartItem = {
 };
 
 export default function MenuScreen() {
-    const { canteenId, canteenName, canteenImage, canteenRating } = useLocalSearchParams<{ canteenId: string; canteenName: string; canteenImage?: string; canteenRating?: string }>();
+    const { canteenId, canteenName, canteenImage, canteenRating, canteenLocation, canteenOpeningTime, canteenClosingTime } = useLocalSearchParams<{ canteenId: string; canteenName: string; canteenImage?: string; canteenRating?: string; canteenLocation?: string; canteenOpeningTime?: string; canteenClosingTime?: string }>();
     const [items, setItems] = useState<MenuItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -191,6 +191,21 @@ export default function MenuScreen() {
                         <View style={styles.overlay} />
                         <View style={styles.bannerContent}>
                             <Text style={styles.bannerTitle}>{canteenName || "Canteen"}</Text>
+                            
+                            {canteenLocation && (
+                                <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 6 }}>
+                                    <Ionicons name="location" size={14} color="#E5E7EB" />
+                                    <Text style={{ color: '#E5E7EB', fontSize: 13, marginLeft: 4 }}>{canteenLocation}</Text>
+                                </View>
+                            )}
+                            
+                            {canteenOpeningTime && canteenClosingTime && (
+                                <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
+                                    <Ionicons name="time" size={14} color="#E5E7EB" />
+                                    <Text style={{ color: '#E5E7EB', fontSize: 13, marginLeft: 4 }}>{canteenOpeningTime} - {canteenClosingTime}</Text>
+                                </View>
+                            )}
+
                             {canteenRating && (
                                 <View style={styles.ratingBadge}>
                                     <Ionicons name="star" size={14} color="#F5A623" />

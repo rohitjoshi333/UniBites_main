@@ -26,7 +26,10 @@ class CartSerializer(serializers.ModelSerializer):
         if obj.canteen:
             return {
                 "id": obj.canteen.id,
-                "name": obj.canteen.name
+                "name": obj.canteen.name,
+                "location": obj.canteen.location,
+                "opening_time": obj.canteen.opening_time,
+                "closing_time": obj.canteen.closing_time
             }
         return None
 

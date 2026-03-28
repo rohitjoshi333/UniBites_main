@@ -12,7 +12,7 @@ const ManageCanteens = () => {
     // Canteen Modal State
     const [isCanteenModalOpen, setIsCanteenModalOpen] = useState(false);
     const [editingCanteen, setEditingCanteen] = useState(null);
-    const [canteenForm, setCanteenForm] = useState({ name: '', vendor_id: '', image: null, imagePreview: null });
+    const [canteenForm, setCanteenForm] = useState({ name: '', vendor_id: '', location: '', opening_time: '', closing_time: '', image: null, imagePreview: null });
 
     // Menu Item Modal State
     const [selectedCanteen, setSelectedCanteen] = useState(null);
@@ -80,9 +80,9 @@ const ManageCanteens = () => {
     const openCanteenModal = (canteen = null) => {
         setEditingCanteen(canteen);
         if (canteen) {
-            setCanteenForm({ name: canteen.name, vendor_id: canteen.vendor_id || '', image: null, imagePreview: canteen.image_url });
+            setCanteenForm({ name: canteen.name, vendor_id: canteen.vendor_id || '', location: canteen.location || '', opening_time: canteen.opening_time || '', closing_time: canteen.closing_time || '', image: null, imagePreview: canteen.image_url });
         } else {
-            setCanteenForm({ name: '', vendor_id: '', image: null, imagePreview: null });
+            setCanteenForm({ name: '', vendor_id: '', location: '', opening_time: '', closing_time: '', image: null, imagePreview: null });
         }
         setIsCanteenModalOpen(true);
     };
@@ -93,13 +93,16 @@ const ManageCanteens = () => {
         const formData = new FormData();
         formData.append('name', canteenForm.name);
         if (canteenForm.vendor_id) formData.append('vendor_id', canteenForm.vendor_id);
+        formData.append('location', canteenForm.location);
+        formData.append('opening_time', canteenForm.opening_time);
+        formData.append('closing_time', canteenForm.closing_time);
         if (canteenForm.image) formData.append('image', canteenForm.image);
 
         try {
             if (editingCanteen) {
-                await api.put(`admin/canteens/${editingCanteen.id}/`, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+                await api.put(`admin/canteens/${editingCanteen.id}/`, formData);
             } else {
-                await api.post('admin/canteens/', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+                await api.post('admin/canteens/', formData);
             }
             await fetchCanteens();
             setIsCanteenModalOpen(false);
@@ -353,6 +356,43 @@ const ManageCanteens = () => {
                                         <option key={v.id} value={v.id}>{v.full_name} ({v.email})</option>
                                     ))}
                                 </select>
+                            </div>
+
+                            <div className="form-group">
+                                <label>Location *</label>
+                                <input 
+                                    type="text" 
+                                    className="form-control" 
+                                    required 
+                                    placeholder="e.g., Building A, Ground Floor"
+                                    value={canteenForm.location}
+                                    onChange={(e) => setCanteenForm({...canteenForm, location: e.target.value})}
+                                />
+                            </div>
+
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                <div className="form-group">
+                                    <label>Opening Time *</label>
+                                    <input 
+                                        type="text" 
+                                        className="form-control" 
+                                        required 
+                                        placeholder="08:00 AM"
+                                        value={canteenForm.opening_time}
+                                        onChange={(e) => setCanteenForm({...canteenForm, opening_time: e.target.value})}
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label>Closing Time *</label>
+                                    <input 
+                                        type="text" 
+                                        className="form-control" 
+                                        required 
+                                        placeholder="06:00 PM"
+                                        value={canteenForm.closing_time}
+                                        onChange={(e) => setCanteenForm({...canteenForm, closing_time: e.target.value})}
+                                    />
+                                </div>
                             </div>
 
                             <div className="form-group">

@@ -190,6 +190,9 @@ export default function HomeScreen() {
                 canteenName: canteen.name,
                 canteenImage: canteen.image_url || '',
                 canteenRating: canteen.rating,
+                canteenLocation: canteen.location,
+                canteenOpeningTime: canteen.opening_time,
+                canteenClosingTime: canteen.closing_time,
               }
             })}
           >

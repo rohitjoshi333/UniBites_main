@@ -211,6 +211,18 @@ const CheckoutScreen = () => {
                             <Ionicons name="storefront-outline" size={20} color="#E85D3A" />
                             <Text style={styles.infoText}>{cart.canteen.name}</Text>
                         </View>
+                        {cart.canteen.location && (
+                            <View style={[styles.infoRow, { marginTop: 8 }]}>
+                                <Ionicons name="location-outline" size={20} color="#6B7280" />
+                                <Text style={[styles.infoText, { color: '#6B7280', fontSize: 13 }]}>{cart.canteen.location}</Text>
+                            </View>
+                        )}
+                        {cart.canteen.opening_time && cart.canteen.closing_time && (
+                            <View style={[styles.infoRow, { marginTop: 8 }]}>
+                                <Ionicons name="time-outline" size={20} color="#6B7280" />
+                                <Text style={[styles.infoText, { color: '#6B7280', fontSize: 13 }]}>{cart.canteen.opening_time} - {cart.canteen.closing_time}</Text>
+                            </View>
+                        )}
                     </View>
                 )}
 
@@ -377,8 +389,8 @@ const styles = StyleSheet.create({
         backgroundColor: "#F3F4F6",
     },
 
-    scrollContent: { 
-        paddingBottom: 20 
+    scrollContent: {
+        paddingBottom: 20
     },
 
     header: {
@@ -510,122 +522,122 @@ const styles = StyleSheet.create({
 
     // Scheduler 
     scheduleHeader: {
-        flexDirection: 'row', 
+        flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'space-between', 
+        justifyContent: 'space-between',
         marginBottom: 0,
     },
 
-    scheduleHeaderLeft: { 
-        flexDirection: 'row', 
-        alignItems: 'center', 
+    scheduleHeaderLeft: {
+        flexDirection: 'row',
+        alignItems: 'center',
         gap: 12 },
 
     scheduleIcon: {
-        width: 38, 
+        width: 38,
         height: 38, 
         borderRadius: 19,
-        backgroundColor: '#EDE9FE', 
-        justifyContent: 'center', 
+        backgroundColor: '#EDE9FE',
+        justifyContent: 'center',
         alignItems: 'center',
     },
 
-    scheduleSubtitle: { 
-        fontSize: 12, 
-        color: '#94A3B8', 
-        marginTop: 2 
+    scheduleSubtitle: {
+        fontSize: 12,
+        color: '#94A3B8',
+        marginTop: 2
     },
 
     toggle: {
-        width: 50, 
-        height: 28, 
+        width: 50,
+        height: 28,
         borderRadius: 14,
-        backgroundColor: '#CBD5E1', 
+        backgroundColor: '#CBD5E1',
         padding: 3,
         justifyContent: 'center',
     },
 
-    toggleOn: { 
-        backgroundColor: '#7C3AED' 
+    toggleOn: {
+        backgroundColor: '#7C3AED'
     },
 
     toggleThumb: {
-        width: 22, 
-        height: 22, 
-        borderRadius: 11, 
+        width: 22,
+        height: 22,
+        borderRadius: 11,
         backgroundColor: '#fff',
-        shadowColor: '#000', 
-        shadowOpacity: 0.2, 
-        shadowRadius: 2, 
+        shadowColor: '#000',
+        shadowOpacity: 0.2,
+        shadowRadius: 2,
         elevation: 2,
         alignSelf: 'flex-start',
     },
     toggleThumbOn: { alignSelf: 'flex-end' },
 
-    slotLabel: { 
-        fontSize: 13, 
-        color: '#64748B', 
-        marginTop: 14, 
-        marginBottom: 10 
+    slotLabel: {
+        fontSize: 13,
+        color: '#64748B',
+        marginTop: 14,
+        marginBottom: 10
     },
 
-    slotScroll: { 
-        marginHorizontal: -4 
+    slotScroll: {
+        marginHorizontal: -4
     },
 
-    slotRow: { 
-        flexDirection: 'row', 
-        gap: 8, 
-        paddingHorizontal: 4 
+    slotRow: {
+        flexDirection: 'row',
+        gap: 8,
+        paddingHorizontal: 4
     },
 
     slotChip: {
-        flexDirection: 'row', 
+        flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: '#EDE9FE',
-        paddingHorizontal: 14, 
+        paddingHorizontal: 14,
         paddingVertical: 8,
-        borderRadius: 20, 
-        borderWidth: 1.5, 
+        borderRadius: 20,
+        borderWidth: 1.5,
         borderColor: '#7C3AED22',
     },
 
-    slotChipSelected: { 
-        backgroundColor: '#7C3AED', 
-        borderColor: '#7C3AED' 
+    slotChipSelected: {
+        backgroundColor: '#7C3AED',
+        borderColor: '#7C3AED'
     },
 
-    slotText: { 
-        fontSize: 13, 
-        fontWeight: '600', 
-        color: '#7C3AED' 
+    slotText: {
+        fontSize: 13,
+        fontWeight: '600',
+        color: '#7C3AED'
     },
 
-    slotTextSelected: { 
-        color: '#fff' 
+    slotTextSelected: {
+        color: '#fff'
     },
 
     selectedSlotBanner: {
-        flexDirection: 'row', 
-        alignItems: 'center', 
+        flexDirection: 'row',
+        alignItems: 'center',
         gap: 6,
-        backgroundColor: '#EDE9FE', 
+        backgroundColor: '#EDE9FE',
         borderRadius: 10,
-        paddingVertical: 10, 
-        paddingHorizontal: 14, 
+        paddingVertical: 10,
+        paddingHorizontal: 14,
         marginTop: 12,
     },
 
-    selectedSlotText: { 
-        fontSize: 13, 
-        fontWeight: '600', 
-        color: '#7C3AED' 
+    selectedSlotText: {
+        fontSize: 13,
+        fontWeight: '600',
+        color: '#7C3AED'
     },
 
-    noSlotsText: { 
-        fontSize: 13, 
-        color: '#94A3B8', 
-        marginTop: 12 
+    noSlotsText: {
+        fontSize: 13,
+        color: '#94A3B8',
+        marginTop: 12
     },
 
     paymentCard: {
@@ -662,21 +674,21 @@ const styles = StyleSheet.create({
         marginTop: 2,
     },
 
-    paymentCardSelected: { 
-        borderColor: '#10B981', 
-        borderWidth: 2, 
-        backgroundColor: '#F0FDF4' 
+    paymentCardSelected: {
+        borderColor: '#10B981',
+        borderWidth: 2,
+        backgroundColor: '#F0FDF4'
     },
 
-    esewaCard: { 
-        borderColor: '#60C271' 
+    esewaCard: {
+        borderColor: '#60C271'
     },
 
-    esewaLogo: { 
-        fontSize: 22, 
-        fontWeight: '900', 
-        color: '#60C271', 
-        fontStyle: 'italic' 
+    esewaLogo: {
+        fontSize: 22,
+        fontWeight: '900',
+        color: '#60C271',
+        fontStyle: 'italic'
     },
 
     footer: {

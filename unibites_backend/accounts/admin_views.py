@@ -230,6 +230,9 @@ class AdminCanteenListView(APIView):
                 "vendor_id": c.vendor_id,
                 "vendor_name": c.vendor.full_name if c.vendor else None,
                 "vendor_email": c.vendor.email if c.vendor else None,
+                "location": c.location,
+                "opening_time": c.opening_time,
+                "closing_time": c.closing_time,
                 "image_url": c.image_url,
             })
         return Response(data)
@@ -237,6 +240,9 @@ class AdminCanteenListView(APIView):
     def post(self, request):
         name = request.data.get("name")
         vendor_id = request.data.get("vendor_id")
+        location = request.data.get("location", "")
+        opening_time = request.data.get("opening_time", "")
+        closing_time = request.data.get("closing_time", "")
         
         if not name:
             return Response({"error": "Canteen name is required."}, status=status.HTTP_400_BAD_REQUEST)
@@ -248,7 +254,13 @@ class AdminCanteenListView(APIView):
             except User.DoesNotExist:
                 return Response({"error": "Valid Vendor ID is required if assigning a vendor."}, status=status.HTTP_400_BAD_REQUEST)
 
-        canteen = Canteen(name=name, vendor=vendor)
+        canteen = Canteen(
+            name=name, 
+            vendor=vendor,
+            location=location,
+            opening_time=opening_time,
+            closing_time=closing_time
+        )
         canteen.save()
 
         # Handle Image Upload
@@ -270,6 +282,9 @@ class AdminCanteenListView(APIView):
             "vendor_id": canteen.vendor_id,
             "vendor_name": canteen.vendor.full_name if canteen.vendor else None,
             "vendor_email": canteen.vendor.email if canteen.vendor else None,
+            "location": canteen.location,
+            "opening_time": canteen.opening_time,
+            "closing_time": canteen.closing_time,
             "image_url": canteen.image_url,
         }, status=status.HTTP_201_CREATED)
 
@@ -298,6 +313,9 @@ class AdminCanteenDetailView(APIView):
             "vendor_id": canteen.vendor_id,
             "vendor_name": canteen.vendor.full_name if canteen.vendor else None,
             "vendor_email": canteen.vendor.email if canteen.vendor else None,
+            "location": canteen.location,
+            "opening_time": canteen.opening_time,
+            "closing_time": canteen.closing_time,
             "image_url": canteen.image_url,
         })
 
@@ -308,6 +326,12 @@ class AdminCanteenDetailView(APIView):
 
         if "name" in request.data:
             canteen.name = request.data["name"]
+        if "location" in request.data:
+            canteen.location = request.data["location"]
+        if "opening_time" in request.data:
+            canteen.opening_time = request.data["opening_time"]
+        if "closing_time" in request.data:
+            canteen.closing_time = request.data["closing_time"]
         
         if "vendor_id" in request.data:
             vendor_id = request.data["vendor_id"]
@@ -338,6 +362,9 @@ class AdminCanteenDetailView(APIView):
             "vendor_id": canteen.vendor_id,
             "vendor_name": canteen.vendor.full_name if canteen.vendor else None,
             "vendor_email": canteen.vendor.email if canteen.vendor else None,
+            "location": canteen.location,
+            "opening_time": canteen.opening_time,
+            "closing_time": canteen.closing_time,
             "image_url": canteen.image_url,
         })
 
