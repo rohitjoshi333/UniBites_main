@@ -1,80 +1,67 @@
 # UniBites 🍽️
 
-UniBites is a university-focused food ordering and canteen management application designed to simplify campus dining. The system allows students to securely register using their college email, verify their account via OTP, browse available canteens, and interact with the platform efficiently. It also provides a robust backend architecture for authentication, verification, and future scalability.
+UniBites is a custom-built solution for college canteen management, designed specifically for university students and canteen vendors. It replaces traditional, manual ordering with a modern, real-time platform that handles everything from food scheduling to secure payments via **eSewa**.
+
+We built this to solve the common "canteen rush" by allowing students to order ahead and get notified the moment their food is ready.
 
 ---
 
-## 🚀 Features
+## 🔥 What's inside?
 
-### 🔐 Authentication & Security
-- College email–based registration
-- OTP-based email verification
-- Resend OTP functionality (only latest OTP is valid)
-- Secure login using JWT authentication
-- Password reset with OTP verification
-- Prevention of password reuse during reset
+### 📱 For Students (Mobile App)
+*   **Secure College Auth**: Verified registration using your `@islingtoncollege.edu.np` email and OTP.
+*   **Real-time Tracking**: Get instant push-style notifications (with custom sound alerts 🔔) when your order status changes.
+*   **eSewa Integration**: Seamless, secure payments directly from the app.
+*   **Ratings & Feedback**: Rate your favorite canteens and leave reviews to help others.
+*   **Food Scheduling**: Choose a specific pickup time so your food is fresh when you arrive.
 
-### 📱 User Features
-- Clean and modern mobile UI built with React Native
-- Nepali phone number validation (`+977`, 10 digits, starting with 9)
-- Responsive and consistent authentication screens
-- Proper error handling and validation feedback
-
-### 🛠️ Backend Features
-- Built with Django REST Framework
-- Secure password hashing
-- OTP expiration handling
-- Strict OTP validation (old OTPs invalidated on resend)
-- Role-based user support (USER, ADMIN, etc.)
-- Scalable API structure
+### 🍱 For Canteen Vendors (Web Dashboard)
+*   **Live Order Management**: A high-contrast, professional order board with audible alerts for new and urgent orders.
+*   **Sales Analytics**: 30-day performance charts and daily sales breakdowns.
+*   **Canteen Branding**: Complete control over your canteen's image, menu, and availability.
+*   **Customer Reviews**: Direct access to your ratings and customer feedback inside the dashboard.
 
 ---
 
-## 🧱 Tech Stack
+## 🛠️ The Tech Behind It
 
-### Frontend
-- React Native (Expo)
-- Expo Router
-- Fetch API for backend communication
+We focused on a clean, scalable stack that's easy to maintain:
+
+*   **Frontend**: React Native (Expo) with Expo Router for the mobile app; React with Lucide icons for the web dashboard.
+*   **Backend**: Django REST Framework (Python) providing a RESTful API.
+*   **Real-time Updates**: WebSockets (via Django Channels style logic) for instant communication between students and vendors.
+*   **State Management**: Modern React Context + Hooks for clean logic sharing across components.
+*   **Storage & Media**: PostgreSQL for the database and Cloudinary for high-performance image hosting.
+
+---
+
+## 🏗️ Getting Started
 
 ### Backend
-- Django
-- Django REST Framework
-- Simple JWT for authentication
-- PostgreSQL
+1. `cd unibites_backend`
+2. Create your virtual environment and install `requirements.txt`.
+3. Run migrations: `python manage.py migrate`.
+4. Fire up the server: `python manage.py runserver`.
+
+### Mobile App
+1. `cd unibites-app`
+2. Install dependencies: `npm install`.
+3. Start Expo: `npx expo start`.
+
+### Web Dashboard
+1. `cd web-dashboard`
+2. Install dependencies: `npm install`.
+3. Run the dev server: `npm run dev`.
 
 ---
 
-## 🔁 OTP Flow (How It Works)
-
-1. User registers with college email
-2. Backend generates a 6-digit OTP and sends it via email
-3. User verifies OTP
-4. If OTP expires or is lost, user can resend OTP
-5. Old OTP is invalidated immediately when a new OTP is generated
-6. Only the latest OTP is accepted
+## 🔒 Security First
+*   **JWT Authentication**: Secure, token-based login for all users.
+*   **Smart OTP**: OTPs that expire after 2 minutes and invalidate old codes automatically to prevent abuse.
+*   **Data Integrity**: Server-side validation for all critical actions (like status updates and payments).
 
 ---
 
-## 🔒 Security Considerations
-
-- OTPs expire after a fixed time window
-- OTPs are invalidated after use
-- Resending OTP overrides previous OTP
-- Password reset blocks reuse of old passwords
-- Backend acts as the single source of truth for validation
-
----
-
-## 🧪 Future Improvements
-- In-app food ordering & cart system
-- Vendor dashboards
-- Admin analytics panel
-- Push notifications
-- SMS-based OTP support
-- Rate limiting for OTP requests
-
----
-
-## 👨‍💻 Author
-Rohit Joshi
+## 👨‍💻 Developed By
+**Rohit Joshi**  
+Build this tool which will actually solve University problems.
