@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Upload, ImageIcon, Star } from 'lucide-react';
+import { Upload, ImageIcon, Star, X, MessageSquare } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import api from '../services/api';
 import '../styles/dashboard.css';
@@ -8,11 +8,12 @@ const VendorDashboard = () => {
     const [stats, setStats] = useState({
         totalItems: 0,
         activeItems: 0,
-        canteenName: '',
-        rating: 0,
-        canteenImage: '',
+        canteenId: null,
         pendingOrders: 0,
     });
+    const [showReviews, setShowReviews] = useState(false);
+    const [reviews, setReviews] = useState([]);
+    const [reviewsLoading, setReviewsLoading] = useState(false);
     const [loading, setLoading] = useState(true);
     const [uploading, setUploading] = useState(false);
     const [imagePreview, setImagePreview] = useState(null);
@@ -61,7 +62,7 @@ const VendorDashboard = () => {
                 let esewaRevenue = 0;
                 let cashOrders = 0;
                 let cashRevenue = 0;
-                const last7Days = [];
+                const last30Days = [];
 
                 try {
                     const ordersRes = await api.get('vendor/orders/');
@@ -81,10 +82,10 @@ const VendorDashboard = () => {
                     const todayStr = now.toDateString();
                     ordersToday = allOrders.filter(o => new Date(o.created_at).toDateString() === todayStr).length;
 
-                    for (let i = 6; i >= 0; i--) {
+                    for (let i = 29; i >= 0; i--) {
                         const d = new Date();
                         d.setDate(d.getDate() - i);
-                        last7Days.push({
+                        last30Days.push({
                             name: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
                             sales: 0
                         });
@@ -101,7 +102,7 @@ const VendorDashboard = () => {
                             todaysSales += amount;
                         }
                         const dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-                        const dayData = last7Days.find(item => item.name === dateStr);
+                        const dayData = last30Days.find(item => item.name === dateStr);
                         if (dayData) dayData.sales += amount;
 
                         // Payment breakdown
@@ -135,7 +136,7 @@ const VendorDashboard = () => {
                     cashOrders,
                     cashRevenue,
                 });
-                setChartData(last7Days);
+                setChartData(last30Days);
 
                 setStats({
                     totalItems: items.length,
@@ -144,6 +145,7 @@ const VendorDashboard = () => {
                     rating: canteen.rating,
                     vendorName: canteen.vendor_name,
                     canteenImage: canteen.image_url || '',
+                    canteenId: canteen.id,
                     pendingOrders,
                 });
             } catch (error) {
@@ -184,6 +186,97 @@ const VendorDashboard = () => {
         }
     };
 
+    const fetchReviews = async () => {
+        if (!stats.canteenId) return;
+        setReviewsLoading(true);
+        setShowReviews(true);
+        try {
+            const res = await api.get(`canteens/${stats.canteenId}/reviews/`);
+            setReviews(res.data);
+        } catch (error) {
+            console.error('Error fetching reviews', error);
+        } finally {
+            setReviewsLoading(false);
+        }
+    };
+
+    const ReviewsModal = () => (
+        <div className="modal-overlay" onClick={() => setShowReviews(false)}>
+            <div className="modal-content reviews-modal" onClick={e => e.stopPropagation()}>
+                <div className="modal-header">
+                    <div className="modal-header-left">
+                        <h2>Canteen Reviews</h2>
+                    </div>
+                    <button className="modal-close" onClick={() => setShowReviews(false)}>
+                        <X size={20} />
+                    </button>
+                </div>
+
+                <div className="modal-body">
+                    <div className="reviews-summary">
+                        <div className="overall-rating">
+                            <span className="big-rating">{stats.rating}</span>
+                            <div className="stars-row">
+                                {[1, 2, 3, 4, 5].map(s => (
+                                    <Star 
+                                        key={s} 
+                                        size={18} 
+                                        fill={s <= Math.round(stats.rating) ? "#eab308" : "transparent"} 
+                                        stroke={s <= Math.round(stats.rating) ? "#eab308" : "#cbd5e1"} 
+                                    />
+                                ))}
+                            </div>
+                            <span className="reviews-count">{reviews.length} Total Reviews</span>
+                        </div>
+                    </div>
+
+                    <div className="reviews-list">
+                        {reviewsLoading ? (
+                            <div className="reviews-loading">
+                                <div className="spinner-small"></div>
+                                <p>Loading reviews...</p>
+                            </div>
+                        ) : reviews.length > 0 ? (
+                            reviews.map(review => (
+                                <div key={review.id} className="review-item">
+                                    <div className="review-item-header">
+                                        <div className="user-avatar">
+                                            {review.user_name ? review.user_name.charAt(0).toUpperCase() : '?'}
+                                        </div>
+                                        <div className="user-info">
+                                            <span className="user-name">{review.user_name}</span>
+                                            <div className="item-stars">
+                                                {[1, 2, 3, 4, 5].map(s => (
+                                                    <Star 
+                                                        key={s} 
+                                                        size={12} 
+                                                        fill={s <= review.rating ? "#eab308" : "transparent"} 
+                                                        stroke={s <= review.rating ? "#eab308" : "#cbd5e1"} 
+                                                    />
+                                                ))}
+                                            </div>
+                                        </div>
+                                        <span className="review-date">
+                                            {new Date(review.created_at).toLocaleDateString()}
+                                        </span>
+                                    </div>
+                                    {review.message && (
+                                        <p className="review-message">{review.message}</p>
+                                    )}
+                                </div>
+                            ))
+                        ) : (
+                            <div className="empty-reviews">
+                                <MessageSquare size={40} strokeWidth={1.5} />
+                                <p>No reviews yet</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+
     if (loading) return <div className="loading-spinner"></div>;
 
     return (
@@ -205,8 +298,11 @@ const VendorDashboard = () => {
                     <span className="stat-label">Active Items</span>
                     <span className="stat-value" style={{ color: 'var(--success-color)' }}>{stats.activeItems}</span>
                 </div>
-                <div className="stat-card">
-                    <span className="stat-label">Canteen Rating</span>
+                <div className="stat-card" style={{ cursor: 'pointer' }} onClick={fetchReviews}>
+                    <div className="stat-card-header">
+                        <span className="stat-label">Canteen Rating</span>
+                        <button className="stat-action-link" onClick={(e) => { e.stopPropagation(); fetchReviews(); }}>Show Details</button>
+                    </div>
                     <span className="stat-value" style={{ color: 'var(--primary-color)', display: 'flex', alignItems: 'center', gap: '4px' }}>
                         {stats.rating} <Star size={18} fill="#eab308" stroke="#eab308" />
                     </span>
@@ -289,7 +385,7 @@ const VendorDashboard = () => {
 
             {/* Sales Chart */}
             <div className="card dashboard-main-card dashboard-chart-card">
-                <h3 className="dashboard-section-heading">Sales Trend (Last 7 Days)</h3>
+                <h3 className="dashboard-section-heading">Sales Trend (Last 30 Days)</h3>
                 <ResponsiveContainer width="100%" height="80%">
                     <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
@@ -372,6 +468,7 @@ const VendorDashboard = () => {
                     </div>
                 </div>
             </div>
+            {showReviews && <ReviewsModal />}
         </div>
     );
 };

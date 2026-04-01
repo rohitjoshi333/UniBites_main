@@ -138,7 +138,7 @@ export default function OrdersScreen() {
     const [hasRated, setHasRated] = useState(false);
     const [selectedRating, setSelectedRating] = useState(0);
     const [message, setMessage] = useState('');
-    const [dismissedRatings, setDismissedRatings] = useState<Set<number>>(new Set());
+    const sessionDismissedRef = useRef<Set<number>>(new Set());
 
     const wsRef = useRef<WebSocket | null>(null);
 
@@ -161,8 +161,8 @@ export default function OrdersScreen() {
 
                         if (msg.status === 'COMPLETED') {
                             const completedOrder = updated.find(o => o.id === msg.order_id);
-
-                            if (completedOrder && !completedOrder.is_rated && !ratingOrder && !dismissedRatings.has(msg.order_id)) {
+                            // Now it Only shows popup if server says not rated and if the  session is not dismissed 
+                            if (completedOrder && !completedOrder.is_rated && !ratingOrder && !sessionDismissedRef.current.has(msg.order_id)) {
                                 setRatingOrder(completedOrder);
                                 setHasRated(false);
                                 setSelectedRating(0);
@@ -189,18 +189,11 @@ export default function OrdersScreen() {
             const data = await getMyOrders();
             setOrders(data);
 
-            // Show popup automatically for the first COMPLETED order that hasn't been dismissed yet
-            let storedDismissed = new Set<number>();
-            try {
-                const stored = await SecureStore.getItemAsync('dismissedRatings');
-                if (stored) {
-                    const parsed = JSON.parse(stored);
-                    storedDismissed = new Set(parsed);
-                    setDismissedRatings(storedDismissed);
-                }
-            } catch (e) { console.log('Error reading secure store'); }
-
-            const unrated = data.find((o: any) => o.status === 'COMPLETED' && !o.is_rated && !storedDismissed.has(o.id));
+            // Show popup for the first COMPLETED, unrated order that wasn't dismissed this session
+            // is_rated comes from the server so its consistent across all devices
+            const unrated = data.find((o: any) =>
+                o.status === 'COMPLETED' && !o.is_rated && !sessionDismissedRef.current.has(o.id)
+            );
             if (unrated && !ratingOrder) {
                 setRatingOrder(unrated);
                 setHasRated(false);
@@ -232,13 +225,9 @@ export default function OrdersScreen() {
         }
     };
 
-    const handleCloseModal = async () => {
+    const handleCloseModal = () => {
         if (ratingOrder) {
-            const newDismissed = new Set(dismissedRatings).add(ratingOrder.id);
-            setDismissedRatings(newDismissed);
-            try {
-                await SecureStore.setItemAsync('dismissedRatings', JSON.stringify(Array.from(newDismissed)));
-            } catch (e) { }
+            sessionDismissedRef.current.add(ratingOrder.id);
         }
         setRatingOrder(null);
         setHasRated(false);
@@ -255,11 +244,9 @@ export default function OrdersScreen() {
             try {
                 await rateOrder(ratingOrder.id, selectedRating, message);
                 setHasRated(true);
-                const newDismissed = new Set(dismissedRatings).add(ratingOrder.id);
-                setDismissedRatings(newDismissed);
-                await SecureStore.setItemAsync('dismissedRatings', JSON.stringify(Array.from(newDismissed)));
-                // update local state to reflect that the order was rated
+                // Mark as rated in local state so UI updates immediately
                 setOrders(prev => prev.map(o => o.id === ratingOrder.id ? { ...o, is_rated: true } : o));
+                sessionDismissedRef.current.add(ratingOrder.id);
             } catch (e) {
                 console.error('Failed to rate order', e);
                 Alert.alert('Error', 'Could not save your rating. Please try again.');

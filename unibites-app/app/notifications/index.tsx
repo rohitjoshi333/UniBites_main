@@ -69,7 +69,7 @@ export default function NotificationsScreen() {
             >
                 <View style={[styles.iconContainer, !item.is_read && styles.unreadIconContainer]}>
                     <Ionicons
-                        name={item.notification_type === 'PAYMENT' ? 'card-outline' : 'cube-outline'}
+                        name={item.notification_type === 'PAYMENT' ? 'card-outline' : 'fast-food-outline'}
                         size={22}
                         color={item.is_read ? '#64748B' : '#4F46E5'}
                     />

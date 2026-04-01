@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { ClipboardList, RefreshCw, CheckCircle, XCircle, ChevronDown, ChevronUp, Phone, Mail, User } from 'lucide-react';
+import { ClipboardList, RefreshCw, Clock, ChevronDown, ChevronUp, Phone, Mail, User, AlertCircle, Calendar, Banknote, CreditCard } from 'lucide-react';
 import api from '../services/api';
 import notificationSound from '../assets/notification_sound.mp3';
 import '../styles/dashboard.css';
@@ -32,6 +32,24 @@ const ACTION_MAP = {
     READY: [{ label: 'Order Picked Up', next: 'COMPLETED', variant: 'btn-completed' }],
 };
 
+// play the alert brefore 15 min of pickup
+const ALERT_BEFORE_MINUTES = 15;
+const ACTIVE_STATUSES = ['PENDING', 'ACCEPTED', 'PREPARING', 'READY'];
+
+function minsUntilPickup(scheduledTime) {
+    if (!scheduledTime) return null;
+    return Math.floor((new Date(scheduledTime).getTime() - Date.now()) / 60000);
+}
+
+function playSound() {
+    try {
+        const audio = new Audio(notificationSound);
+        audio.play().catch(e => console.warn('Audio play failed', e));
+    } catch (err) {
+        console.warn('Audio initialization failed', err);
+    }
+}
+
 const StatusStepper = ({ status }) => {
     if (status === 'REJECTED') return (
         <div className="status-rejected-pill">✕ Order Rejected</div>
@@ -52,7 +70,7 @@ const StatusStepper = ({ status }) => {
     );
 };
 
-const OrderCard = ({ order, onStatusUpdate }) => {
+const OrderCard = ({ order, onStatusUpdate, minsLeft }) => {
     const [expanded, setExpanded] = useState(true);
     const [updating, setUpdating] = useState(false);
     const cfg = STATUS_CONFIG[order.status] || STATUS_CONFIG.PENDING;
@@ -81,8 +99,25 @@ const OrderCard = ({ order, onStatusUpdate }) => {
         ? new Date(order.scheduled_time).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
         : null;
 
+    // minsLeft is passed from parent (computed every 30s)
+    const isUrgent = minsLeft !== null && minsLeft !== undefined && minsLeft >= 0 && minsLeft <= ALERT_BEFORE_MINUTES;
+    const isOverdue = minsLeft !== null && minsLeft !== undefined && minsLeft < 0;
+
     return (
-        <div className={`order-card-compact ${order.status === 'PENDING' ? 'pulse-pending' : ''}`}>
+        <div className={`order-card-compact ${order.status === 'PENDING' ? 'pulse-pending' : ''} ${isUrgent ? 'urgent-scheduled' : ''}`}>
+
+            {/* this is for the urgent pickup banner */}
+            {scheduledStr && (isUrgent || isOverdue) && (
+                <div className={`urgent-scheduled-banner ${isOverdue ? 'overdue' : ''}`}>
+                    <AlertCircle size={16} />
+                    <span className="urgent-text">
+                        {isOverdue
+                            ? `Scheduled pickup was at ${scheduledStr} — please serve immediately`
+                            : `Pickup in ${minsLeft} min (Scheduled: ${scheduledStr})`
+                        }
+                    </span>
+                </div>
+            )}
 
             <div className="occ-top">
                 <div className="occ-top-left">
@@ -90,18 +125,25 @@ const OrderCard = ({ order, onStatusUpdate }) => {
                     <span className="occ-date">{dateStr} · {timeStr}</span>
                     <span className={`badge ${cfg.className}`}>{cfg.label}</span>
                     {scheduledStr && (
-                        <span className="badge-scheduled">Pickup {scheduledStr}</span>
+                        <span className={`badge-scheduled ${isUrgent ? 'badge-scheduled-urgent' : ''}`}>
+                            <Calendar size={14} />
+                            <span>Pickup {scheduledStr}</span>
+                        </span>
                     )}
                 </div>
                 <div className="occ-top-right">
                     {order.payment_method === 'ESEWA' ? (
-                        <span className={`occ-payment ${order.payment_status === 'PAID' ? 'paid' : 'failed'}`}>
-                            {order.payment_status === 'PAID' ? '✓ eSewa' : '✕ eSewa Failed'}
-                        </span>
+                        <div className={`occ-payment esewa ${order.payment_status === 'PAID' ? 'paid' : 'failed'}`}>
+                            <CreditCard size={14} />
+                            <span>{order.payment_status === 'PAID' ? 'eSewa Paid' : 'eSewa Failed'}</span>
+                        </div>
                     ) : (
-                        <span className="occ-payment cash">⏳ Cash</span>
+                        <div className="occ-payment cash">
+                            <Banknote size={14} />
+                            <span>Collect Cash</span>
+                        </div>
                     )}
-                    <span className="occ-total">Rs. {order.total_price}</span>
+                    <span className="occ-total">NPR {order.total_price}</span>
                 </div>
             </div>
 
@@ -118,8 +160,6 @@ const OrderCard = ({ order, onStatusUpdate }) => {
                     </div>
                 )}
             </div>
-            
-            {/** Scheduled time is already displayed inline above */ }
 
             {expanded && (
                 <div className="occ-items">
@@ -128,7 +168,7 @@ const OrderCard = ({ order, onStatusUpdate }) => {
                         <div key={item.id} className="occ-item-row">
                             <span className="occ-item-qty">{item.quantity}&times;</span>
                             <span className="occ-item-name">{item.menu_item_name}</span>
-                            <span className="occ-item-price">Rs. {item.subtotal}</span>
+                            <span className="occ-item-price">NPR {item.subtotal}</span>
                         </div>
                     ))}
                 </div>
@@ -165,6 +205,9 @@ const VendorOrders = () => {
     const [refreshing, setRefreshing] = useState(false);
     const [filter, setFilter] = useState('ALL');
 
+    const alertedRef = useRef(new Set());
+    const [minsLeftMap, setMinsLeftMap] = useState({});
+
     const fetchOrders = useCallback(async () => {
         try {
             const res = await api.get('vendor/orders/');
@@ -175,6 +218,47 @@ const VendorOrders = () => {
             setLoading(false);
             setRefreshing(false);
         }
+    }, []);
+
+    // Scheduled order reminder interval
+    useEffect(() => {
+        const checkScheduled = () => {
+            setOrders(currentOrders => {
+                const newMap = {};
+                let playedSound = false;
+                let newlyAlerted = false;
+
+                currentOrders.forEach(order => {
+                    if (!order.scheduled_time) return;
+                    if (!ACTIVE_STATUSES.includes(order.status)) return;
+
+                    const mins = minsUntilPickup(order.scheduled_time);
+                    newMap[order.id] = mins;
+
+                    if (mins !== null && mins >= -5 && mins <= ALERT_BEFORE_MINUTES && !alertedRef.current.has(order.id)) {
+                        alertedRef.current.add(order.id);
+                        newlyAlerted = true;
+                        if (!playedSound) {
+                            playSound();
+                            playedSound = true;
+                        }
+                    }
+                });
+
+                setMinsLeftMap(newMap);
+
+                if (newlyAlerted) {
+                    document.title = 'Pickup Soon! — UniBites';
+                    setTimeout(() => { document.title = 'Vendor Orders — UniBites'; }, 5000);
+                }
+
+                return currentOrders;
+            });
+        };
+
+        checkScheduled();
+        const timer = setInterval(checkScheduled, 30000); // every 30 seconds
+        return () => clearInterval(timer);
     }, []);
 
     // WebSocket real-time new order alerts
@@ -195,13 +279,7 @@ const VendorOrders = () => {
                 if (msg.type === 'new_order') {
                     setOrders(prev => [msg.order, ...prev]);
 
-                    // Play notification sound
-                    try {
-                        const audio = new Audio(notificationSound);
-                        audio.play().catch(e => console.warn('Audio play failed', e));
-                    } catch (err) {
-                        console.warn('Audio initialization failed', err);
-                    }
+                    playSound();
 
                     document.title = 'New Order! — UniBites';
                     setTimeout(() => { document.title = 'Vendor Orders — UniBites'; }, 3000);
@@ -218,6 +296,17 @@ const VendorOrders = () => {
 
     useEffect(() => { fetchOrders(); }, [fetchOrders]);
 
+    // Re-compute minsLeftMap whenever orders change
+    useEffect(() => {
+        const map = {};
+        orders.forEach(order => {
+            if (order.scheduled_time && ACTIVE_STATUSES.includes(order.status)) {
+                map[order.id] = minsUntilPickup(order.scheduled_time);
+            }
+        });
+        setMinsLeftMap(map);
+    }, [orders]);
+
     const handleRefresh = () => { setRefreshing(true); fetchOrders(); };
 
     const FILTER_TABS = [
@@ -229,13 +318,23 @@ const VendorOrders = () => {
 
     const filteredOrders = orders.filter(o => {
         if (filter === 'ALL') return true;
-        if (filter === 'PENDING_GROUP') return ['PENDING', 'ACCEPTED', 'PREPARING', 'READY'].includes(o.status);
+        if (filter === 'PENDING_GROUP') return ACTIVE_STATUSES.includes(o.status);
         if (filter === 'COMPLETED') return o.status === 'COMPLETED';
         if (filter === 'REJECTED_GROUP') return ['REJECTED', 'CANCELLED'].includes(o.status);
         return false;
     });
 
-    const pendingCount = orders.filter(o => ['PENDING', 'ACCEPTED', 'PREPARING', 'READY'].includes(o.status)).length;
+    // Sort: urgent scheduled orders bubble to TOP, then by created_at desc
+    const sortedOrders = [...filteredOrders].sort((a, b) => {
+        const aUrgent = minsLeftMap[a.id] !== undefined && minsLeftMap[a.id] >= 0 && minsLeftMap[a.id] <= ALERT_BEFORE_MINUTES;
+        const bUrgent = minsLeftMap[b.id] !== undefined && minsLeftMap[b.id] >= 0 && minsLeftMap[b.id] <= ALERT_BEFORE_MINUTES;
+        if (aUrgent && !bUrgent) return -1;
+        if (!aUrgent && bUrgent) return 1;
+        return 0;
+    });
+
+    const pendingCount = orders.filter(o => ACTIVE_STATUSES.includes(o.status)).length;
+    const urgentScheduledCount = Object.values(minsLeftMap).filter(m => m >= 0 && m <= ALERT_BEFORE_MINUTES).length;
 
     if (loading) return <div className="loading-spinner" />;
 
@@ -264,6 +363,16 @@ const VendorOrders = () => {
                 </button>
             </header>
 
+            {/* Urgent scheduled orders header or global alert bar */}
+            {urgentScheduledCount > 0 && (
+                <div className="urgent-alert-bar">
+                    <AlertCircle size={18} />
+                    <strong>
+                        {urgentScheduledCount} scheduled order{urgentScheduledCount > 1 ? 's' : ''} with pickup within {ALERT_BEFORE_MINUTES} minutes!
+                    </strong>
+                    <span>Scroll down for details</span>
+                </div>
+            )}
 
             <div className="stats-grid st-col-5" style={{ marginBottom: '1.5rem' }}>
                 {[
@@ -271,7 +380,7 @@ const VendorOrders = () => {
                     { label: 'Pending', value: pendingCount, color: '#D97706' },
                     { label: 'Completed', value: orders.filter(o => o.status === 'COMPLETED').length, color: '#10B981' },
                     { label: 'Rejected', value: orders.filter(o => o.status === 'REJECTED' || o.status === 'CANCELLED').length, color: '#DC2626' },
-                    { label: 'Today\'s Sales', value: `Rs. ${todaysSales.toFixed(2)}`, color: '#0F172A' },
+                    { label: "Today's Sales", value: `NPR ${todaysSales.toFixed(2)}`, color: '#0F172A' },
                 ].map((s, idx) => (
                     <div key={`${s.label}-${idx}`} className="stat-card">
                         <span className="stat-label">{s.label}</span>
@@ -279,7 +388,6 @@ const VendorOrders = () => {
                     </div>
                 ))}
             </div>
-
 
             <div className="order-filters">
                 {FILTER_TABS.map(f => (
@@ -296,16 +404,20 @@ const VendorOrders = () => {
                 ))}
             </div>
 
-
-            {filteredOrders.length === 0 ? (
+            {sortedOrders.length === 0 ? (
                 <div className="orders-empty">
                     <ClipboardList size={56} strokeWidth={1.2} />
                     <p>No orders found for this tab.</p>
                 </div>
             ) : (
                 <div className="orders-list">
-                    {filteredOrders.map(order => (
-                        <OrderCard key={order.id} order={order} onStatusUpdate={fetchOrders} />
+                    {sortedOrders.map(order => (
+                        <OrderCard
+                            key={order.id}
+                            order={order}
+                            onStatusUpdate={fetchOrders}
+                            minsLeft={minsLeftMap[order.id]}
+                        />
                     ))}
                 </div>
             )}
