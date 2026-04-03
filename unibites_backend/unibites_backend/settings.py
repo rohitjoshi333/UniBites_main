@@ -1,5 +1,9 @@
 from pathlib import Path
-
+import os
+import cloudinary
+import certifi
+os.environ['SSL_CERT_FILE'] = certifi.where()
+from datetime import timedelta
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -146,7 +150,6 @@ REST_FRAMEWORK = {
     ),
 }
 
-from datetime import timedelta
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
@@ -156,10 +159,6 @@ SIMPLE_JWT = {
 AUTH_USER_MODEL = 'accounts.User'
 
 CORS_ALLOW_ALL_ORIGINS = True
-
-import os
-import cloudinary
-
 cloudinary.config(
     cloud_name='dpms02eim',
     api_key='395418468221677',
@@ -171,3 +170,14 @@ cloudinary.config(
 ESEWA_PRODUCT_CODE = os.environ.get('ESEWA_PRODUCT_CODE', 'EPAYTEST')
 ESEWA_SECRET_KEY = os.environ.get('ESEWA_SECRET_KEY', '8gBm/:&EnhH.1/q')
 ESEWA_PAYMENT_URL = os.environ.get('ESEWA_PAYMENT_URL', 'https://rc-epay.esewa.com.np/api/epay/main/v2/form')
+
+# Email Configuration (SMTP) 
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 465
+EMAIL_USE_TLS = False
+EMAIL_USE_SSL = True
+EMAIL_TIMEOUT = 10 
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', 'unibites8@gmail.com')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', 'vjzw dqqe eswe kzgy')
+DEFAULT_FROM_EMAIL = 'unibites8@gmail.com'

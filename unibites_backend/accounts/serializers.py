@@ -3,6 +3,7 @@ from django.utils import timezone
 from datetime import timedelta
 from .models import User, Canteen, Banner, Review, Notification
 import random
+from .utils import send_otp_email
 
 class BannerSerializer(serializers.ModelSerializer):
     class Meta:
@@ -62,8 +63,9 @@ class RegisterSerializer(serializers.ModelSerializer):
 
         user.save()
 
-        # In real app: email lai kei kaso gari hami eta set garney xam tesko lagi ajai tutorial haru hernu parney hunxa guys haru peace :)
-        print("DEBUG OTP for", user.email, "=", otp)
+        # Send OTP via email
+        send_otp_email(user.email, otp)
+        print("DEBUG OTP for", user.email, "=", otp)  # Keep for local testing if needed
 
         return user
 

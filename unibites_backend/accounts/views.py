@@ -25,6 +25,7 @@ from rest_framework import permissions
 from rest_framework.parsers import MultiPartParser, FormParser
 import csv
 from django.http import HttpResponse
+from .utils import send_otp_email
 
 
 class RegisterView(APIView):
@@ -86,7 +87,11 @@ class ForgotPasswordView(APIView):
         user.otp_expires_at = timezone.now() + timedelta(seconds=120)
         user.save()
 
+        success = send_otp_email(user.email, otp)
         print("DEBUG reset OTP for", user.email, "=", otp)
+
+        if not success:
+            return Response({"error": "Failed to send verification email check your SMTP settings."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         return Response({"message": "OTP sent to email for password reset."})
 
@@ -154,7 +159,11 @@ class ResendOtpView(APIView):
         user.otp_expires_at = timezone.now() + timedelta(minutes=5)
         user.save(update_fields=["otp_code", "otp_expires_at"])
 
+        success = send_otp_email(user.email, otp)
         print("DEBUG NEW OTP for", user.email, "=", otp)
+
+        if not success:
+            return Response({"error": "Failed to send verification email check your SMTP settings."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         return Response({"message": "OTP resent successfully."})
 
