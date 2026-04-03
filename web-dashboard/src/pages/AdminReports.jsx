@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Download, FileText, Users, Store } from 'lucide-react';
 import api from '../services/api';
 import '../styles/dashboard.css';
@@ -9,7 +9,22 @@ const AdminReports = () => {
         startDate: '',
         endDate: '',
         status: '',
+        canteenId: '',
     });
+
+    const [canteens, setCanteens] = useState([]);
+
+    useEffect(() => {
+        const fetchCanteens = async () => {
+            try {
+                const response = await api.get('admin/canteens/');
+                setCanteens(response.data);
+            } catch (error) {
+                console.error('Error fetching canteens:', error);
+            }
+        };
+        fetchCanteens();
+    }, []);
 
     const [usersFilter, setUsersFilter] = useState({
         startDate: '',
@@ -43,7 +58,7 @@ const AdminReports = () => {
         }
     };
 
-    const hasOrdersFilter = ordersFilter.startDate || ordersFilter.endDate || ordersFilter.status;
+    const hasOrdersFilter = ordersFilter.startDate || ordersFilter.endDate || ordersFilter.status || ordersFilter.canteenId;
     const hasUsersFilter = usersFilter.startDate || usersFilter.endDate || usersFilter.role;
 
     return (
@@ -83,6 +98,7 @@ const AdminReports = () => {
                                         start_date: ordersFilter.startDate,
                                         end_date: ordersFilter.endDate,
                                         status: ordersFilter.status,
+                                        canteen_id: ordersFilter.canteenId,
                                     })}
                                 >
                                     <Download size={14} /> Download File
@@ -115,6 +131,19 @@ const AdminReports = () => {
                                         />
                                     </div>
                                     <div className="report-filter-group">
+                                        <label className="report-filter-label">Canteen</label>
+                                        <select
+                                            className="report-filter-input"
+                                            value={ordersFilter.canteenId}
+                                            onChange={e => setOrdersFilter(f => ({ ...f, canteenId: e.target.value }))}
+                                        >
+                                            <option value="">All Canteens</option>
+                                            {canteens.map(c => (
+                                                <option key={c.id} value={c.id}>{c.name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div className="report-filter-group">
                                         <label className="report-filter-label">Order Status</label>
                                         <select
                                             className="report-filter-input"
@@ -130,7 +159,7 @@ const AdminReports = () => {
                                     {hasOrdersFilter && (
                                         <button
                                             className="report-filter-clear"
-                                            onClick={() => setOrdersFilter({ startDate: '', endDate: '', status: '' })}
+                                            onClick={() => setOrdersFilter({ startDate: '', endDate: '', status: '', canteenId: '' })}
                                         >
                                             Clear Filters
                                         </button>

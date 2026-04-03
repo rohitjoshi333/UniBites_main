@@ -726,12 +726,15 @@ class AdminReportExportView(APIView):
             start_date = request.GET.get('start_date')
             end_date = request.GET.get('end_date')
             status_filter = request.GET.get('status')
+            canteen_id = request.GET.get('canteen_id')
             if start_date:
                 orders = orders.filter(created_at__date__gte=start_date)
             if end_date:
                 orders = orders.filter(created_at__date__lte=end_date)
             if status_filter:
                 orders = orders.filter(status=status_filter)
+            if canteen_id:
+                orders = orders.filter(canteen_id=canteen_id)
 
             for order in orders:
                 writer.writerow([
