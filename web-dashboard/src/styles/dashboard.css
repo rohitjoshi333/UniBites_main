@@ -1571,7 +1571,7 @@ body {
         flex-direction: column;
     }
 }
-   /* ORDER CARD */
+/* ORDER CARD */
 
 .order-card-compact {
     background: #ffffff;
@@ -1893,9 +1893,7 @@ body {
     font-weight: 600;
 }
 
-/* ─────────────────────────────────────────────────────────
-   REVIEWS MODAL
-───────────────────────────────────────────────────────── */
+/* REVIEWS MODAL */
 
 .modal-overlay {
     position: fixed;
@@ -2115,4 +2113,106 @@ body {
 .stat-action-link:hover {
     opacity: 0.8;
     text-decoration: underline;
+}
+
+/* REPORT PAGE FILTERS */
+
+.report-filter-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 1rem;
+    flex-wrap: wrap;
+    padding: 4px 0;
+}
+
+.report-filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.report-filter-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #64748b;
+}
+
+.report-filter-input {
+    padding: 0.4rem 0.75rem;
+    border-radius: 0.5rem;
+    border: 1px solid var(--border-color);
+    background-color: var(--card-bg);
+    color: var(--text-color);
+    font-size: 0.875rem;
+    font-family: inherit;
+    min-width: 150px;
+    transition: all 0.15s ease;
+    cursor: pointer;
+}
+
+.report-filter-input:hover {
+    border-color: var(--primary-color);
+    background-color: #f8fafc;
+}
+
+.report-filter-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(var(--primary-rgb, 96, 194, 113), 0.12);
+}
+
+.report-filter-clear {
+    padding: 0.4rem 0.875rem;
+    border-radius: 0.5rem;
+    border: 1px solid #fecaca;
+    background-color: #fff5f5;
+    color: #dc2626;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background-color 0.15s, border-color 0.15s;
+    white-space: nowrap;
+    align-self: flex-end;
+}
+
+.report-filter-clear:hover {
+    background-color: #fee2e2;
+    border-color: #fca5a5;
+}
+
+.report-filter-download-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0.45rem 1rem;
+    border-radius: 0.5rem;
+    border: none;
+    background-color: var(--text-color);
+    color: var(--card-bg);
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: opacity 0.15s;
+    white-space: nowrap;
+}
+
+.report-filter-download-btn:hover {
+    opacity: 0.85;
+}
+
+.report-filter-row-cell {
+    background-color: var(--background-color);
+    padding: 10px 16px !important;
+}
+
+.report-no-filters-label {
+    font-size: 0.8125rem;
+    color: #94a3b8;
+    font-style: italic;
+    padding: 4px 0;
+    display: block;
 }

@@ -446,8 +446,8 @@ class EsewaInitiateView(APIView):
         signature = generate_signature(total_amount_str, transaction_uuid, product_code)
 
         # Deep-link back into the app after payment
-        success_url = "https://2cd1-2400-74e0-0-1371-6857-2f29-cb70-703c.ngrok-free.app/api/orders/esewa/verify/"
-        failure_url = f"https://2cd1-2400-74e0-0-1371-6857-2f29-cb70-703c.ngrok-free.app/api/orders/esewa/verify/?status=failed&uuid={transaction_uuid}"
+        success_url = "https://3749-2400-74e0-0-1371-24d8-49d5-9be6-5e1d.ngrok-free.app/api/orders/esewa/verify/"
+        failure_url = f"https://3749-2400-74e0-0-1371-24d8-49d5-9be6-5e1d.ngrok-free.app/api/orders/esewa/verify/?status=failed&uuid={transaction_uuid}"
 
         return Response({
             "order_id": order.id,

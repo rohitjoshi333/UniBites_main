@@ -721,6 +721,18 @@ class AdminReportExportView(APIView):
             from orders.models import Order
             writer.writerow(['Order ID', 'User', 'Canteen', 'Total Amount', 'Status', 'Date'])
             orders = Order.objects.all().select_related('user', 'canteen').order_by('-created_at')
+
+            # Apply filters
+            start_date = request.GET.get('start_date')
+            end_date = request.GET.get('end_date')
+            status_filter = request.GET.get('status')
+            if start_date:
+                orders = orders.filter(created_at__date__gte=start_date)
+            if end_date:
+                orders = orders.filter(created_at__date__lte=end_date)
+            if status_filter:
+                orders = orders.filter(status=status_filter)
+
             for order in orders:
                 writer.writerow([
                     order.id,
@@ -734,6 +746,18 @@ class AdminReportExportView(APIView):
         elif report_type == 'users':
             writer.writerow(['User ID', 'Name', 'Email', 'Role', 'Status', 'Joined Date'])
             users = User.objects.all().order_by('-date_joined')
+
+            # Apply filters
+            start_date = request.GET.get('start_date')
+            end_date = request.GET.get('end_date')
+            role_filter = request.GET.get('role')
+            if start_date:
+                users = users.filter(date_joined__date__gte=start_date)
+            if end_date:
+                users = users.filter(date_joined__date__lte=end_date)
+            if role_filter:
+                users = users.filter(role=role_filter.upper())
+
             for u in users:
                 writer.writerow([
                     u.id,

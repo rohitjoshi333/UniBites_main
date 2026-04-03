@@ -321,6 +321,18 @@ class VendorReportExportView(APIView):
             from orders.models import Order
             writer.writerow(['Order ID', 'User Name', 'User Email', 'Items', 'Total Amount', 'Status', 'Date'])
             orders = Order.objects.filter(canteen=canteen).select_related('user').prefetch_related('items__menu_item').order_by('-created_at')
+
+            # Apply filters
+            start_date = request.GET.get('start_date')
+            end_date = request.GET.get('end_date')
+            status_filter = request.GET.get('status')
+            if start_date:
+                orders = orders.filter(created_at__date__gte=start_date)
+            if end_date:
+                orders = orders.filter(created_at__date__lte=end_date)
+            if status_filter:
+                orders = orders.filter(status=status_filter)
+
             for order in orders:
                 items_str = ", ".join([f"{item.quantity}x {item.menu_item.name}" for item in order.items.all()])
                 writer.writerow([
