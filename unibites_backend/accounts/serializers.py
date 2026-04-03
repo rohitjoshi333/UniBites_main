@@ -65,7 +65,7 @@ class RegisterSerializer(serializers.ModelSerializer):
 
         # Send OTP via email
         send_otp_email(user.email, otp)
-        print("DEBUG OTP for", user.email, "=", otp)  # Keep for local testing if needed
+        print("DEBUG OTP for", user.email, "=", otp)
 
         return user
 

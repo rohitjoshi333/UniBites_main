@@ -2,6 +2,11 @@ from pathlib import Path
 import os
 import cloudinary
 import certifi
+from dotenv import load_dotenv
+
+# Load environment variables early
+load_dotenv()
+
 os.environ['SSL_CERT_FILE'] = certifi.where()
 from datetime import timedelta
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -12,10 +17,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-9glejz^3+w1!+syxbulu+-h0557sgtuznt^dryqqz7keznt!%7"
+SECRET_KEY = os.environ.get("SECRET_KEY", "fallback-secret-key-default")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get("DEBUG", "True").lower() == "true"
 
 ALLOWED_HOSTS = ["*"]
 
@@ -95,11 +100,11 @@ CHANNEL_LAYERS = {
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": "unibites_db",
-        "USER": "postgres",
-        "PASSWORD": "rohit",
-        "HOST": "localhost",
-        "PORT": "5432",
+        "NAME": os.environ.get("DB_NAME", "unibites_db"),
+        "USER": os.environ.get("DB_USER", "postgres"),
+        "PASSWORD": os.environ.get("DB_PASSWORD", ""),
+        "HOST": os.environ.get("DB_HOST", "localhost"),
+        "PORT": os.environ.get("DB_PORT", "5432"),
     }
 }
 
@@ -160,9 +165,9 @@ AUTH_USER_MODEL = 'accounts.User'
 
 CORS_ALLOW_ALL_ORIGINS = True
 cloudinary.config(
-    cloud_name='dpms02eim',
-    api_key='395418468221677',
-    api_secret='itvn3iU3QKfGiTilJjFU9qHqIBw',
+    cloud_name=os.environ.get('CLOUDINARY_CLOUD_NAME'),
+    api_key=os.environ.get('CLOUDINARY_API_KEY'),
+    api_secret=os.environ.get('CLOUDINARY_API_SECRET'),
     secure=True,
 )
 
@@ -178,6 +183,6 @@ EMAIL_PORT = 465
 EMAIL_USE_TLS = False
 EMAIL_USE_SSL = True
 EMAIL_TIMEOUT = 10 
-EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', 'unibites8@gmail.com')
-EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', 'vjzw dqqe eswe kzgy')
-DEFAULT_FROM_EMAIL = 'unibites8@gmail.com'
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'unibites8@gmail.com')
