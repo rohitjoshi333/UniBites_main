@@ -1,7 +1,9 @@
 import axios from 'axios';
+// export const API_BASE_URL = "http://localhost:8000/api/";
+export const API_BASE_URL = "https://unibites-nepal-hkaqh5dfdagqfyf7.southeastasia-01.azurewebsites.net/api/";
 
 const api = axios.create({
-    baseURL: 'http://localhost:8000/api/',
+    baseURL: API_BASE_URL,
 });
 
 api.interceptors.request.use(

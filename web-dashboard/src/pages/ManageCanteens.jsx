@@ -8,21 +8,22 @@ const ManageCanteens = () => {
     const [vendors, setVendors] = useState([]);
     const [loading, setLoading] = useState(true);
     const [actionLoading, setActionLoading] = useState(false);
-    
+
     // Canteen Modal State
     const [isCanteenModalOpen, setIsCanteenModalOpen] = useState(false);
     const [editingCanteen, setEditingCanteen] = useState(null);
     const [canteenForm, setCanteenForm] = useState({ name: '', vendor_id: '', location: '', opening_time: '', closing_time: '', image: null, imagePreview: null });
+    const [canteenFormError, setCanteenFormError] = useState('');
 
     // Menu Item Modal State
     const [selectedCanteen, setSelectedCanteen] = useState(null);
     const [menuItems, setMenuItems] = useState([]);
     const [menuLoading, setMenuLoading] = useState(false);
-    
+
     const [isMenuItemModalOpen, setIsMenuItemModalOpen] = useState(false);
     const [editingMenuItem, setEditingMenuItem] = useState(null);
-    const [menuItemForm, setMenuItemForm] = useState({ 
-        name: '', description: '', price: '', is_available: true, image: null, imagePreview: null 
+    const [menuItemForm, setMenuItemForm] = useState({
+        name: '', description: '', price: '', is_available: true, image: null, imagePreview: null
     });
 
     const fetchCanteens = async () => {
@@ -79,6 +80,7 @@ const ManageCanteens = () => {
     // --- Canteen Actions ---
     const openCanteenModal = (canteen = null) => {
         setEditingCanteen(canteen);
+        setCanteenFormError('');
         if (canteen) {
             setCanteenForm({ name: canteen.name, vendor_id: canteen.vendor_id || '', location: canteen.location || '', opening_time: canteen.opening_time || '', closing_time: canteen.closing_time || '', image: null, imagePreview: canteen.image_url });
         } else {
@@ -99,6 +101,7 @@ const ManageCanteens = () => {
         if (canteenForm.image) formData.append('image', canteenForm.image);
 
         try {
+            setCanteenFormError('');
             if (editingCanteen) {
                 await api.put(`admin/canteens/${editingCanteen.id}/`, formData);
             } else {
@@ -108,7 +111,7 @@ const ManageCanteens = () => {
             setIsCanteenModalOpen(false);
         } catch (error) {
             console.error('Error saving canteen:', error);
-            alert(error.response?.data?.error || 'Failed to save canteen.');
+            setCanteenFormError(error.response?.data?.error || 'Failed to save canteen.');
         } finally {
             setActionLoading(false);
         }
@@ -117,7 +120,7 @@ const ManageCanteens = () => {
     const deleteCanteen = async (canteenId, e) => {
         e.stopPropagation();
         if (!window.confirm('Are you sure you want to delete this canteen? All its menu items and orders will be deleted.')) return;
-        
+
         try {
             await api.delete(`admin/canteens/${canteenId}/`);
             await fetchCanteens();
@@ -235,7 +238,7 @@ const ManageCanteens = () => {
                                         <Trash2 size={16} />
                                     </button>
                                 </div>
-                                
+
                                 <h3 className="menu-name">{canteen.name}</h3>
                                 <p style={{ margin: '0.25rem 0 0.5rem', fontSize: '0.8125rem', color: 'var(--text-muted)', wordBreak: 'break-all' }}>
                                     {canteen.vendor_email ? `Vendor: ${canteen.vendor_name || canteen.vendor_email}` : 'No Vendor Assigned'}
@@ -298,7 +301,7 @@ const ManageCanteens = () => {
                                                     </p>
                                                 )}
                                                 <div className="menu-price">Rs {item.price}</div>
-                                                
+
                                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem' }}>
                                                     <span className={`badge ${item.is_available ? 'badge-accepted' : 'badge-rejected'}`}>
                                                         {item.is_available ? 'Available' : 'Unavailable'}
@@ -332,24 +335,25 @@ const ManageCanteens = () => {
                                 <X size={20} />
                             </button>
                         </div>
+                        {canteenFormError && <div className="login-error" style={{ marginTop: '1rem', padding: '0.75rem' }}>{canteenFormError}</div>}
                         <form onSubmit={saveCanteen} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' }}>
                             <div className="form-group">
                                 <label>Canteen Name *</label>
-                                <input 
-                                    type="text" 
-                                    className="form-control" 
-                                    required 
+                                <input
+                                    type="text"
+                                    className="form-control"
+                                    required
                                     value={canteenForm.name}
-                                    onChange={(e) => setCanteenForm({...canteenForm, name: e.target.value})}
+                                    onChange={(e) => setCanteenForm({ ...canteenForm, name: e.target.value })}
                                 />
                             </div>
 
                             <div className="form-group">
                                 <label>Assign Vendor</label>
-                                <select 
-                                    className="form-control" 
+                                <select
+                                    className="form-control"
                                     value={canteenForm.vendor_id}
-                                    onChange={(e) => setCanteenForm({...canteenForm, vendor_id: e.target.value})}
+                                    onChange={(e) => setCanteenForm({ ...canteenForm, vendor_id: e.target.value })}
                                 >
                                     <option value="">-- No Vendor Assigned --</option>
                                     {vendors.map(v => (
@@ -360,37 +364,37 @@ const ManageCanteens = () => {
 
                             <div className="form-group">
                                 <label>Location *</label>
-                                <input 
-                                    type="text" 
-                                    className="form-control" 
-                                    required 
+                                <input
+                                    type="text"
+                                    className="form-control"
+                                    required
                                     placeholder="e.g., Building A, Ground Floor"
                                     value={canteenForm.location}
-                                    onChange={(e) => setCanteenForm({...canteenForm, location: e.target.value})}
+                                    onChange={(e) => setCanteenForm({ ...canteenForm, location: e.target.value })}
                                 />
                             </div>
 
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                                 <div className="form-group">
                                     <label>Opening Time *</label>
-                                    <input 
-                                        type="text" 
-                                        className="form-control" 
-                                        required 
+                                    <input
+                                        type="text"
+                                        className="form-control"
+                                        required
                                         placeholder="08:00 AM"
                                         value={canteenForm.opening_time}
-                                        onChange={(e) => setCanteenForm({...canteenForm, opening_time: e.target.value})}
+                                        onChange={(e) => setCanteenForm({ ...canteenForm, opening_time: e.target.value })}
                                     />
                                 </div>
                                 <div className="form-group">
                                     <label>Closing Time *</label>
-                                    <input 
-                                        type="text" 
-                                        className="form-control" 
-                                        required 
+                                    <input
+                                        type="text"
+                                        className="form-control"
+                                        required
                                         placeholder="06:00 PM"
                                         value={canteenForm.closing_time}
-                                        onChange={(e) => setCanteenForm({...canteenForm, closing_time: e.target.value})}
+                                        onChange={(e) => setCanteenForm({ ...canteenForm, closing_time: e.target.value })}
                                     />
                                 </div>
                             </div>
@@ -401,13 +405,13 @@ const ManageCanteens = () => {
                                     {canteenForm.imagePreview && (
                                         <img src={canteenForm.imagePreview} alt="Preview" style={{ width: '60px', height: '60px', borderRadius: '8px', objectFit: 'cover' }} />
                                     )}
-                                    <input 
-                                        type="file" 
+                                    <input
+                                        type="file"
                                         accept="image/*"
                                         onChange={(e) => {
                                             const file = e.target.files[0];
                                             if (file) {
-                                                setCanteenForm({...canteenForm, image: file, imagePreview: URL.createObjectURL(file)});
+                                                setCanteenForm({ ...canteenForm, image: file, imagePreview: URL.createObjectURL(file) });
                                             }
                                         }}
                                     />
@@ -438,45 +442,45 @@ const ManageCanteens = () => {
                         <form onSubmit={saveMenuItem} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' }}>
                             <div className="form-group">
                                 <label>Item Name *</label>
-                                <input 
-                                    type="text" 
-                                    className="form-control" 
-                                    required 
+                                <input
+                                    type="text"
+                                    className="form-control"
+                                    required
                                     value={menuItemForm.name}
-                                    onChange={(e) => setMenuItemForm({...menuItemForm, name: e.target.value})}
+                                    onChange={(e) => setMenuItemForm({ ...menuItemForm, name: e.target.value })}
                                 />
                             </div>
 
                             <div className="form-group">
                                 <label>Description</label>
-                                <textarea 
-                                    className="form-control" 
+                                <textarea
+                                    className="form-control"
                                     rows="3"
                                     value={menuItemForm.description}
-                                    onChange={(e) => setMenuItemForm({...menuItemForm, description: e.target.value})}
+                                    onChange={(e) => setMenuItemForm({ ...menuItemForm, description: e.target.value })}
                                 ></textarea>
                             </div>
 
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                                 <div className="form-group">
                                     <label>Price (Rs) *</label>
-                                    <input 
-                                        type="number" 
+                                    <input
+                                        type="number"
                                         step="0.01"
-                                        className="form-control" 
-                                        required 
+                                        className="form-control"
+                                        required
                                         value={menuItemForm.price}
-                                        onChange={(e) => setMenuItemForm({...menuItemForm, price: e.target.value})}
+                                        onChange={(e) => setMenuItemForm({ ...menuItemForm, price: e.target.value })}
                                     />
                                 </div>
                             </div>
 
                             <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                <input 
-                                    type="checkbox" 
+                                <input
+                                    type="checkbox"
                                     id="isAvailable"
                                     checked={menuItemForm.is_available}
-                                    onChange={(e) => setMenuItemForm({...menuItemForm, is_available: e.target.checked})}
+                                    onChange={(e) => setMenuItemForm({ ...menuItemForm, is_available: e.target.checked })}
                                 />
                                 <label htmlFor="isAvailable" style={{ margin: 0 }}>Item is Available</label>
                             </div>
@@ -487,13 +491,13 @@ const ManageCanteens = () => {
                                     {menuItemForm.imagePreview && (
                                         <img src={menuItemForm.imagePreview} alt="Preview" style={{ width: '60px', height: '60px', borderRadius: '8px', objectFit: 'cover' }} />
                                     )}
-                                    <input 
-                                        type="file" 
+                                    <input
+                                        type="file"
                                         accept="image/*"
                                         onChange={(e) => {
                                             const file = e.target.files[0];
                                             if (file) {
-                                                setMenuItemForm({...menuItemForm, image: file, imagePreview: URL.createObjectURL(file)});
+                                                setMenuItemForm({ ...menuItemForm, image: file, imagePreview: URL.createObjectURL(file) });
                                             }
                                         }}
                                     />

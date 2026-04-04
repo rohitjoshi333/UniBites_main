@@ -64,12 +64,15 @@ class Canteen(models.Model):
     total_items = models.PositiveIntegerField(default=0)
     image_url = models.URLField(blank=True, null=True)
 
-    vendor = models.ForeignKey(
+    vendor = models.OneToOneField(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
         limit_choices_to={"role": "VENDOR"},
+        error_messages={
+            "unique": "You cannot assign one vendor to multiple canteens. This vendor is already managing a canteen."
+        }
     )
 
     is_active = models.BooleanField(default=True)

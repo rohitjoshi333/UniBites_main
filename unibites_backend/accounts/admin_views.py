@@ -11,6 +11,7 @@ import cloudinary.uploader
 import csv
 from django.http import HttpResponse
 from django.db.models import Count, Sum, Q
+from django.db import IntegrityError
 
 
 class IsAdminUser(permissions.BasePermission):
@@ -261,7 +262,14 @@ class AdminCanteenListView(APIView):
             opening_time=opening_time,
             closing_time=closing_time
         )
-        canteen.save()
+        
+        try:
+            canteen.save()
+        except IntegrityError:
+            return Response(
+                {"error": "You cannot assign one vendor to multiple canteens."}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         # Handle Image Upload
         image_file = request.FILES.get('image')
@@ -355,7 +363,14 @@ class AdminCanteenDetailView(APIView):
             )
             canteen.image_url = result.get("secure_url")
 
-        canteen.save()
+        try:
+            canteen.save()
+        except IntegrityError:
+            return Response(
+                {"error": "You cannot assign one vendor to multiple canteens."}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
         return Response({
             "id": canteen.id,
             "name": canteen.name,
@@ -594,6 +609,11 @@ class AdminUserDetailView(APIView):
                     canteen.save()
                 except Canteen.DoesNotExist:
                     pass
+                except IntegrityError:
+                    return Response(
+                        {"error": "This vendor is already assigned to another canteen."}, 
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
             else:
                 # If canteen_id is null/empty, unassign vendor from their current canteen
                 Canteen.objects.filter(vendor=user).update(vendor=None)
@@ -660,14 +680,22 @@ class AdminCreateUserView(APIView):
         user.set_password(password)
         user.save()
 
-        # Assign canteen if role is VENDOR
         if role == "VENDOR" and canteen_id:
             try:
                 canteen = Canteen.objects.get(pk=canteen_id)
+                if canteen.vendor and canteen.vendor_id != user.id:
+                    return Response({"error": "This canteen already has a vendor assigned."}, status=status.HTTP_400_BAD_REQUEST)
+                # Check if this user is already managing another canteen (since it's OneToOne)
+                existing_canteen = Canteen.objects.filter(vendor=user).first()
+                if existing_canteen and existing_canteen.id != int(canteen_id):
+                    return Response({"error": "This vendor is already assigned to another canteen."}, status=status.HTTP_400_BAD_REQUEST)
+                
                 canteen.vendor = user
                 canteen.save()
             except Canteen.DoesNotExist:
                 pass
+            except IntegrityError:
+                return Response({"error": "This vendor is already assigned to another canteen."}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response({
             "id": user.id,

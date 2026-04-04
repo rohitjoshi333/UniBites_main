@@ -277,8 +277,9 @@ const VendorOrders = () => {
     useEffect(() => {
         const token = localStorage.getItem('access_token');
         if (!token) return;
-
-        const wsBase = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000')
+        
+        // const wsBase = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000')
+        const wsBase = (import.meta.env.VITE_API_BASE_URL || 'https://unibites-nepal-hkaqh5dfdagqfyf7.southeastasia-01.azurewebsites.net')
             .replace(/^http/, 'ws');
         const ws = new WebSocket(`${wsBase}/ws/orders/?token=${token}`);
         wsRef.current = ws;
