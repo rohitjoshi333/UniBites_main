@@ -1,8 +1,13 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { ClipboardList, RefreshCw, Clock, ChevronDown, ChevronUp, Phone, Mail, User, AlertCircle, Calendar, Banknote, CreditCard } from 'lucide-react';
 import api from '../services/api';
-import notificationSound from '../assets/notification_sound.mp3';
+import notificationSound from '../assets/loud_notification.wav';
 import '../styles/dashboard.css';
+
+if ('Notification' in window && Notification.permission === 'default') {
+    // Request permission for native system notifications
+    Notification.requestPermission();
+}
 
 const STATUS_CONFIG = {
     PENDING: { label: 'Pending', className: 'badge-pending', step: 0 },
@@ -43,10 +48,15 @@ function minsUntilPickup(scheduledTime) {
 
 function playSound() {
     try {
+        if ('Notification' in window && Notification.permission === 'granted') {
+            new Notification('UniBites Order Update', {
+                body: 'There is an order update requiring your attention.',
+            });
+        }
         const audio = new Audio(notificationSound);
         audio.play().catch(e => console.warn('Audio play failed', e));
     } catch (err) {
-        console.warn('Audio initialization failed', err);
+        console.warn('Notification/Audio failed', err);
     }
 }
 

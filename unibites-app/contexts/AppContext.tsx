@@ -7,10 +7,20 @@ import React, {
     useCallback,
 } from 'react';
 import * as SecureStore from 'expo-secure-store';
-import { Audio } from 'expo-av';
+import * as Notifications from 'expo-notifications';
 import { API_BASE_URL } from '../constants/api';
 import { getNotifications } from '../services/notificationService';
 import { getMyOrders } from '../services/orderService';
+
+Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+        shouldShowAlert: false,
+        shouldPlaySound: true,
+        shouldSetBadge: false,
+        shouldShowBanner: false,
+        shouldShowList: false,
+    }),
+});
 
 interface AppContextType {
     unreadNotifCount: number;
@@ -42,14 +52,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     const playNotificationSound = async () => {
         try {
-            const { sound } = await Audio.Sound.createAsync(
-                require('../assets/sounds/notification_sound.mp3')
-            );
-            await sound.playAsync();
-            sound.setOnPlaybackStatusUpdate((status) => {
-                if (status.isLoaded && status.didJustFinish) {
-                    sound.unloadAsync();
-                }
+            await Notifications.scheduleNotificationAsync({
+                content: {
+                    title: 'Update',
+                    body: 'You have a new update.',
+                    sound: true,
+                },
+                trigger: null,
             });
         } catch (e) {
             console.log('AppContext: playback error', e);
@@ -129,6 +138,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }, []);
 
     useEffect(() => {
+        // Request notification permissions so system sound can play
+        (async () => {
+            const { status } = await Notifications.getPermissionsAsync();
+            if (status !== 'granted') {
+                await Notifications.requestPermissionsAsync();
+            }
+        })();
+
         refreshCounts();
         connect();
 
