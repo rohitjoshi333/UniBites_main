@@ -8,8 +8,8 @@ const AdminActivities = () => {
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState('all');
     const [currentPage, setCurrentPage] = useState(1);
-    
-    const ITEMS_PER_PAGE = 15;
+
+    const ITEMS_PER_PAGE = 12;
 
     useEffect(() => {
         const fetchActivities = async () => {
@@ -28,7 +28,7 @@ const AdminActivities = () => {
     if (loading) return <div>Loading...</div>;
 
     const filtered = filter === 'all' ? activities : activities.filter(a => a.type === filter);
-    
+
     // Pagination
     const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
@@ -36,7 +36,7 @@ const AdminActivities = () => {
 
     const formatDate = (iso) => {
         const d = new Date(iso);
-        return d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        return d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     };
 
     return (
@@ -95,7 +95,7 @@ const AdminActivities = () => {
                                 ))}
                             </tbody>
                         </table>
-                        
+
                         {/* Pagination Controls */}
                         {totalPages > 1 && (
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '20px', paddingTop: '15px', borderTop: '1px solid #e2e8f0' }}>
@@ -105,14 +105,14 @@ const AdminActivities = () => {
                                     </span>
                                 </div>
                                 <div style={{ display: 'flex', gap: '5px' }}>
-                                    <button 
+                                    <button
                                         onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                                         disabled={currentPage === 1}
                                         style={{ padding: '5px 15px', border: '1px solid #cbd5e1', background: currentPage === 1 ? '#f1f5f9' : '#fff', cursor: currentPage === 1 ? 'not-allowed' : 'pointer', color: currentPage === 1 ? '#94a3b8' : '#0f172a' }}
                                     >
                                         Previous
                                     </button>
-                                    <button 
+                                    <button
                                         onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                                         disabled={currentPage === totalPages}
                                         style={{ padding: '5px 15px', border: '1px solid #cbd5e1', background: currentPage === totalPages ? '#f1f5f9' : '#fff', cursor: currentPage === totalPages ? 'not-allowed' : 'pointer', color: currentPage === totalPages ? '#94a3b8' : '#0f172a' }}

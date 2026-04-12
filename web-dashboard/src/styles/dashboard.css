@@ -258,6 +258,7 @@ body {
 .form-input,
 .form-textarea {
     width: 100%;
+    box-sizing: border-box;
     padding: 0.875rem 1.125rem;
     border: 1px solid var(--border-color);
     border-radius: 0.75rem;

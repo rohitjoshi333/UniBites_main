@@ -670,6 +670,14 @@ class AdminCreateUserView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        from django.contrib.auth.password_validation import validate_password
+        from django.core.exceptions import ValidationError as DjangoValidationError
+        
+        try:
+            validate_password(password)
+        except DjangoValidationError as e:
+            return Response({"error": list(e.messages)[0]}, status=status.HTTP_400_BAD_REQUEST)
+
         user = User(
             email=email,
             full_name=full_name,
@@ -724,6 +732,14 @@ class AdminUserPasswordView(APIView):
         new_password = request.data.get("password")
         if not new_password:
             return Response({"error": "Password is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        from django.contrib.auth.password_validation import validate_password
+        from django.core.exceptions import ValidationError as DjangoValidationError
+        
+        try:
+            validate_password(new_password)
+        except DjangoValidationError as e:
+            return Response({"error": list(e.messages)[0]}, status=status.HTTP_400_BAD_REQUEST)
 
         user.set_password(new_password)
         user.save()

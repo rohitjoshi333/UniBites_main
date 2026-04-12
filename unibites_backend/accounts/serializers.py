@@ -4,6 +4,9 @@ from datetime import timedelta
 from .models import User, Canteen, Banner, Review, Notification
 import random
 from .utils import send_otp_email
+from rest_framework_simplejwt.tokens import RefreshToken
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError as DjangoValidationError
 
 class BannerSerializer(serializers.ModelSerializer):
     class Meta:
@@ -45,6 +48,12 @@ class RegisterSerializer(serializers.ModelSerializer):
     def validate(self, data):
         if data["password"] != data["password2"]:
             raise serializers.ValidationError("Passwords do not match.")
+        
+        try:
+            validate_password(data["password"])
+        except DjangoValidationError as e:
+            raise serializers.ValidationError({"password": list(e.messages)})
+            
         return data
     
     def create(self, validated_data):
@@ -105,8 +114,6 @@ class VerifyOtpSerializer(serializers.Serializer):
         user.save()
         return user
 
-from rest_framework_simplejwt.tokens import RefreshToken
-
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField()
@@ -154,6 +161,11 @@ class ResetPasswordSerializer(serializers.Serializer):
 
         if user.check_password(data["new_password"]):
             raise serializers.ValidationError("New password must be different from the old password.")
+            
+        try:
+            validate_password(data["new_password"], user)
+        except DjangoValidationError as e:
+            raise serializers.ValidationError({"new_password": list(e.messages)})
         
         if user.otp_code != data["otp"]:
             raise serializers.ValidationError("Invalid OTP.")
@@ -247,6 +259,13 @@ class ChangePasswordSerializer(serializers.Serializer):
         
         if data["old_password"] == data["new_password"]:
             raise serializers.ValidationError("New password cannot be the same as the old password.")
+            
+        try:
+            # We can't easily pass 'user' here because validate() doesn't have request context by default unless passed.
+            # But validate_password requires the raw password, which is sufficient for 90% of checks (length, common, numeric).
+            validate_password(data["new_password"])
+        except DjangoValidationError as e:
+            raise serializers.ValidationError({"new_password": list(e.messages)})
             
         return data
 

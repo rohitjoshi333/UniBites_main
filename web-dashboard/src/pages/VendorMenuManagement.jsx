@@ -105,7 +105,14 @@ const VendorMenuManagement = () => {
             handleCloseModal();
         } catch (error) {
             console.error("Error saving item", error);
-            alert("Failed to save item.");
+            if (error.response?.data) {
+                const data = error.response.data;
+                const firstKey = Object.keys(data)[0];
+                const msg = Array.isArray(data[firstKey]) ? data[firstKey][0] : data[firstKey];
+                alert(`Cannot use invalid value: ${msg}`);
+            } else {
+                alert("Failed to save item.");
+            }
         }
     };
 
@@ -194,8 +201,8 @@ const VendorMenuManagement = () => {
                                     required
                                 />
                             </div>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
-                                <div className="form-group" style={{ marginBottom: 0 }}>
+                            <div style={{ display: 'flex', gap: '1.5rem', marginBottom: '1.5rem' }}>
+                                <div className="form-group" style={{ flex: 1, marginBottom: 0 }}>
                                     <label className="form-label">Price (Rs.)</label>
                                     <input
                                         type="number"
@@ -206,11 +213,12 @@ const VendorMenuManagement = () => {
                                         value={formData.price}
                                         onChange={handleInputChange}
                                         required
+                                        min="0"
                                     />
                                 </div>
-                                <div className="form-group">
+                                <div className="form-group" style={{ flex: 1, marginBottom: 0 }}>
                                     <label className="form-label">Status</label>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '0.5rem' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '0.5rem', height: '42px' }}>
                                         <input
                                             type="checkbox"
                                             name="is_available"

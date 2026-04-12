@@ -12,6 +12,8 @@ const UserManagement = () => {
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [showPasswordModal, setShowPasswordModal] = useState(false);
     const [selectedUser, setSelectedUser] = useState(null);
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
     const [canteens, setCanteens] = useState([]);
     const [formData, setFormData] = useState({
         full_name: '', email: '', password: '', phone: '', role: 'USER', canteen_id: '',
@@ -26,6 +28,7 @@ const UserManagement = () => {
             if (filters.search) params.search = filters.search;
             const res = await api.get('admin/users/', { params });
             setUsers(res.data);
+            setCurrentPage(1);
         } catch (error) {
             console.error('Error fetching users', error);
         } finally {
@@ -130,6 +133,12 @@ const UserManagement = () => {
 
     if (loading) return <div className="loading-spinner"></div>;
 
+    // Pagination
+    const indexOfLastUser = currentPage * itemsPerPage;
+    const indexOfFirstUser = indexOfLastUser - itemsPerPage;
+    const currentUsers = users.slice(indexOfFirstUser, indexOfLastUser);
+    const totalPages = Math.ceil(users.length / itemsPerPage);
+
     return (
         <div className="dashboard-page">
             <header className="page-header">
@@ -197,10 +206,10 @@ const UserManagement = () => {
                         </tr>
                     </thead>
                     <tbody>
-                        {users.length === 0 ? (
-                            <tr><td colSpan="6" className="admin-empty-text">No users found.</td></tr>
+                        {currentUsers.length === 0 ? (
+                            <tr><td colSpan="8" className="admin-empty-text">No users found.</td></tr>
                         ) : (
-                            users.map((user) => (
+                            currentUsers.map((user) => (
                                 <tr key={user.id}>
                                     <td className="admin-td-name">{user.full_name}</td>
                                     <td className="admin-td-email">{user.email}</td>
@@ -235,6 +244,31 @@ const UserManagement = () => {
                     </tbody>
                 </table>
             </div>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginTop: '1.5rem', gap: '0.5rem' }}>
+                    <button
+                        className="btn btn-secondary"
+                        disabled={currentPage === 1}
+                        onClick={() => setCurrentPage(prev => prev - 1)}
+                        style={{ padding: '0.5rem 1rem' }}
+                    >
+                        Previous
+                    </button>
+                    <span style={{ fontSize: '0.875rem', fontWeight: '600', color: 'var(--text-muted)' }}>
+                        Page {currentPage} of {totalPages}
+                    </span>
+                    <button
+                        className="btn btn-secondary"
+                        disabled={currentPage === totalPages}
+                        onClick={() => setCurrentPage(prev => prev + 1)}
+                        style={{ padding: '0.5rem 1rem' }}
+                    >
+                        Next
+                    </button>
+                </div>
+            )}
 
             {/* Add User Modal */}
             {showAddModal && (

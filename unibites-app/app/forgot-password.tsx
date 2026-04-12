@@ -19,7 +19,7 @@ export default function ForgotPasswordScreen() {
       body: JSON.stringify({ email }),
     });
 
-    Alert.alert("OTP Sent", "Check console (backend)");
+    Alert.alert("OTP Sent", "Check your college Outlook inbox for the OTP.");
     router.push({ pathname: "/reset-password", params: { email } });
   };
 

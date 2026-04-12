@@ -5,7 +5,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { getCart, updateCartItem, removeCartItem } from '../../services/cartService';
 
 const CartScreen = () => {
-    // ... (rest of logic stays same)
     const router = useRouter();
     const [cart, setCart] = useState<any>(null);
     const [loading, setLoading] = useState(true);

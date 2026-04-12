@@ -2,6 +2,7 @@ from django.db import models
 from django.conf import settings
 from menu.models import MenuItem
 from accounts.models import Canteen
+from django.core.validators import MinValueValidator
 
 class Cart(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='cart')
@@ -56,7 +57,7 @@ class Order(models.Model):
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='orders')
     canteen = models.ForeignKey(Canteen, on_delete=models.CASCADE, related_name='orders')
-    total_price = models.DecimalField(max_digits=10, decimal_places=2)
+    total_price = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0.00)])
     payment_method = models.CharField(max_length=50, default='CASH_ON_ARRIVAL')
     payment_status = models.CharField(
         max_length=30,
@@ -80,7 +81,7 @@ class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='items')
     menu_item = models.ForeignKey(MenuItem, on_delete=models.SET_NULL, null=True)
     quantity = models.PositiveIntegerField()
-    price = models.DecimalField(max_digits=10, decimal_places=2)
+    price = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0.00)])
 
     def __str__(self):
         return f"{self.quantity} x {self.menu_item.name if self.menu_item else 'Deleted item'}"

@@ -13,6 +13,10 @@ from .models import Cart, CartItem, Order, OrderItem
 from menu.models import MenuItem
 from .serializers import CartSerializer, OrderSerializer
 from .esewa import generate_signature, verify_esewa_response
+from django.db.models import Q
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
+from accounts.models import Notification
 
 channel_layer = get_channel_layer()
 
@@ -227,7 +231,13 @@ class MyOrdersView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        orders = Order.objects.filter(user=request.user).prefetch_related('items__menu_item')
+        # Do not show abandoned/unpaid eSewa orders to the user
+        orders = Order.objects.filter(
+            user=request.user
+        ).exclude(
+            Q(payment_method='ESEWA') & Q(payment_status=Order.PaymentStatus.PENDING_PAYMENT)
+        ).prefetch_related('items__menu_item').order_by('-created_at')
+        
         serializer = OrderSerializer(orders, many=True)
         return Response(serializer.data)
 
@@ -446,8 +456,10 @@ class EsewaInitiateView(APIView):
         signature = generate_signature(total_amount_str, transaction_uuid, product_code)
 
         # Deep-link back into the app after payment
-        success_url = "https://3749-2400-74e0-0-1371-24d8-49d5-9be6-5e1d.ngrok-free.app/api/orders/esewa/verify/"
-        failure_url = f"https://3749-2400-74e0-0-1371-24d8-49d5-9be6-5e1d.ngrok-free.app/api/orders/esewa/verify/?status=failed&uuid={transaction_uuid}"
+        # Build callback URL consistently using Django's native absolute URI builder
+        base_verify_url = request.build_absolute_uri('/api/orders/esewa/verify/')
+        success_url = base_verify_url
+        failure_url = f"{base_verify_url}?status=failed&uuid={transaction_uuid}"
 
         return Response({
             "order_id": order.id,
@@ -525,22 +537,25 @@ class EsewaVerifyView(APIView):
 
         encoded_data = request.query_params.get('data')
         if not encoded_data:
-            return Response({"error": "Missing payment data."}, status=400)
+            return deep_link_redirect("unibitesapp://payment-success?orderId=failed&reason=missing_data", "failed")
 
         verified_data = verify_esewa_response(encoded_data)
         if not verified_data:
-            return Response({"error": "Payment verification failed. Invalid signature."}, status=400)
+            return deep_link_redirect("unibitesapp://payment-success?orderId=failed&reason=invalid_signature", "failed")
 
         transaction_uuid = verified_data.get('transaction_uuid', '')
         esewa_status = verified_data.get('status', '')
 
         if esewa_status.upper() != 'COMPLETE':
-            return Response({"error": f"Payment not completed. Status: {esewa_status}"}, status=400)
+            return deep_link_redirect(f"unibitesapp://payment-success?orderId=failed&reason=status_{esewa_status}", "failed")
 
         try:
             order = Order.objects.get(payment_ref_id=transaction_uuid)
         except Order.DoesNotExist:
-            return Response({"error": "Order not found."}, status=404)
+            print(f"ESEWA ERROR: Order not found for UUID: '{transaction_uuid}'. Available orders:")
+            for o in Order.objects.filter(payment_status=Order.PaymentStatus.PENDING_PAYMENT):
+                print(o.payment_ref_id)
+            return Response({"error": f"Order not found.", "received_uuid": transaction_uuid}, status=404)
 
         if order.payment_status == Order.PaymentStatus.PAID:
             return deep_link_redirect(f"unibitesapp://payment-success?orderId={order.id}", order.id)
@@ -551,6 +566,7 @@ class EsewaVerifyView(APIView):
         # Real-time notify vendor dashboard
         try:
             serializer = OrderSerializer(order)
+            channel_layer = get_channel_layer()
             async_to_sync(channel_layer.group_send)(
                 f"vendor_{order.canteen_id}",
                 {
@@ -561,16 +577,32 @@ class EsewaVerifyView(APIView):
                     },
                 },
             )
-        except Exception:
-            pass  # WebSocket push
+        except Exception as e:
+            print("WS error:", e)
 
-        create_and_send_notification(
+        # Remove local import of create_and_send_notification inline to avoid circular issues
+        Notification.objects.create(
             user=order.user,
             title="Payment Successful",
             message=f"Your payment for order #{order.id} was successful.",
             notification_type="PAYMENT",
             related_order_id=order.id
         )
+
+        try:
+            async_to_sync(channel_layer.group_send)(
+                f"user_{order.user.id}",
+                {
+                    "type": "notification.update",
+                    "data": {
+                        "type": "notification",
+                        "title": "Payment Successful",
+                        "message": f"Your payment for order #{order.id} was successful."
+                    }
+                }
+            )
+        except Exception:
+            pass
 
         # Redirect to deep link so the mobile app picks it up
         return deep_link_redirect(f"unibitesapp://payment-success?orderId={order.id}", order.id)

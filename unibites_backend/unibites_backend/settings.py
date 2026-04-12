@@ -22,23 +22,34 @@ SECRET_KEY = os.environ.get("SECRET_KEY", "fallback-secret-key-default")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get("DEBUG", "False").lower() == "true"
 
+# --- Production Hosts (commented out for local dev) ---
+# ALLOWED_HOSTS = [
+#     "unibites-nepal-hkaqh5dfdagqfyf7.southeastasia-01.azurewebsites.net",
+#     "unibites-nepal.azurewebsites.net",
+#     "localhost",
+#     "127.0.0.1",
+# ]
+
+# CSRF_TRUSTED_ORIGINS = [
+#     "https://unibites-nepal-hkaqh5dfdagqfyf7.southeastasia-01.azurewebsites.net",
+#     "https://unibites-nepal.azurewebsites.net",
+# ]
+
+# --- Local Development ---
 ALLOWED_HOSTS = [
-    "unibites-nepal-hkaqh5dfdagqfyf7.southeastasia-01.azurewebsites.net",
-    "unibites-nepal.azurewebsites.net",
+    # "unibites-nepal-hkaqh5dfdagqfyf7.southeastasia-01.azurewebsites.net",
+    # "unibites-nepal.azurewebsites.net",
     "localhost",
     "127.0.0.1",
+    "192.168.1.64",
+    "*",
 ]
 
 CSRF_TRUSTED_ORIGINS = [
-    "https://unibites-nepal-hkaqh5dfdagqfyf7.southeastasia-01.azurewebsites.net",
-    "https://unibites-nepal.azurewebsites.net",
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
+    "http://192.168.1.64:8000",
 ]
-
-# CSRF_TRUSTED_ORIGINS = [
-#     "http://localhost:8000",
-#     "http://127.0.0.1:8000",
-#     "http://192.168.1.64:8000",
-# ]
 
 # Application definition
 

@@ -130,7 +130,13 @@ export default function MenuScreen() {
             await addToCart(item.id, 1);
             await fetchCartData();
         } catch (error: any) {
-            Alert.alert("Error", "Failed to add item. " + (error.response?.data?.error || ""));
+            const backendMsg = error.response?.data?.error;
+            if (backendMsg && backendMsg.includes("Clear cart")) {
+                Alert.alert("Different Canteen", backendMsg);
+            } else {
+                Alert.alert("Notice", backendMsg || "Could not add item to cart.");
+            }
+            // Revert local state assuming it failed
             fetchCartData();
         }
     };

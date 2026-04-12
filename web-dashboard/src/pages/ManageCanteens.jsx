@@ -338,10 +338,10 @@ const ManageCanteens = () => {
                         {canteenFormError && <div className="login-error" style={{ marginTop: '1rem', padding: '0.75rem' }}>{canteenFormError}</div>}
                         <form onSubmit={saveCanteen} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' }}>
                             <div className="form-group">
-                                <label>Canteen Name *</label>
+                                <label className="form-label">Canteen Name *</label>
                                 <input
                                     type="text"
-                                    className="form-control"
+                                    className="form-input"
                                     required
                                     value={canteenForm.name}
                                     onChange={(e) => setCanteenForm({ ...canteenForm, name: e.target.value })}
@@ -349,9 +349,9 @@ const ManageCanteens = () => {
                             </div>
 
                             <div className="form-group">
-                                <label>Assign Vendor</label>
+                                <label className="form-label">Assign Vendor</label>
                                 <select
-                                    className="form-control"
+                                    className="form-input"
                                     value={canteenForm.vendor_id}
                                     onChange={(e) => setCanteenForm({ ...canteenForm, vendor_id: e.target.value })}
                                 >
@@ -363,10 +363,10 @@ const ManageCanteens = () => {
                             </div>
 
                             <div className="form-group">
-                                <label>Location *</label>
+                                <label className="form-label">Location *</label>
                                 <input
                                     type="text"
-                                    className="form-control"
+                                    className="form-input"
                                     required
                                     placeholder="e.g., Building A, Ground Floor"
                                     value={canteenForm.location}
@@ -376,10 +376,10 @@ const ManageCanteens = () => {
 
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                                 <div className="form-group">
-                                    <label>Opening Time *</label>
+                                    <label className="form-label">Opening Time *</label>
                                     <input
                                         type="text"
-                                        className="form-control"
+                                        className="form-input"
                                         required
                                         placeholder="08:00 AM"
                                         value={canteenForm.opening_time}
@@ -387,10 +387,10 @@ const ManageCanteens = () => {
                                     />
                                 </div>
                                 <div className="form-group">
-                                    <label>Closing Time *</label>
+                                    <label className="form-label">Closing Time *</label>
                                     <input
                                         type="text"
-                                        className="form-control"
+                                        className="form-input"
                                         required
                                         placeholder="06:00 PM"
                                         value={canteenForm.closing_time}
@@ -400,7 +400,7 @@ const ManageCanteens = () => {
                             </div>
 
                             <div className="form-group">
-                                <label>Canteen Image</label>
+                                <label className="form-label">Canteen Image</label>
                                 <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
                                     {canteenForm.imagePreview && (
                                         <img src={canteenForm.imagePreview} alt="Preview" style={{ width: '60px', height: '60px', borderRadius: '8px', objectFit: 'cover' }} />
@@ -441,10 +441,10 @@ const ManageCanteens = () => {
                         </div>
                         <form onSubmit={saveMenuItem} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' }}>
                             <div className="form-group">
-                                <label>Item Name *</label>
+                                <label className="form-label">Item Name *</label>
                                 <input
                                     type="text"
-                                    className="form-control"
+                                    className="form-input"
                                     required
                                     value={menuItemForm.name}
                                     onChange={(e) => setMenuItemForm({ ...menuItemForm, name: e.target.value })}
@@ -452,9 +452,9 @@ const ManageCanteens = () => {
                             </div>
 
                             <div className="form-group">
-                                <label>Description</label>
+                                <label className="form-label">Description</label>
                                 <textarea
-                                    className="form-control"
+                                    className="form-textarea"
                                     rows="3"
                                     value={menuItemForm.description}
                                     onChange={(e) => setMenuItemForm({ ...menuItemForm, description: e.target.value })}
@@ -463,11 +463,11 @@ const ManageCanteens = () => {
 
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                                 <div className="form-group">
-                                    <label>Price (Rs) *</label>
+                                    <label className="form-label">Price (Rs) *</label>
                                     <input
                                         type="number"
                                         step="0.01"
-                                        className="form-control"
+                                        className="form-input"
                                         required
                                         value={menuItemForm.price}
                                         onChange={(e) => setMenuItemForm({ ...menuItemForm, price: e.target.value })}
@@ -475,18 +475,19 @@ const ManageCanteens = () => {
                                 </div>
                             </div>
 
-                            <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', height: '42px' }}>
                                 <input
                                     type="checkbox"
                                     id="isAvailable"
                                     checked={menuItemForm.is_available}
                                     onChange={(e) => setMenuItemForm({ ...menuItemForm, is_available: e.target.checked })}
+                                    style={{ width: '1.25rem', height: '1.25rem', cursor: 'pointer' }}
                                 />
-                                <label htmlFor="isAvailable" style={{ margin: 0 }}>Item is Available</label>
+                                <label htmlFor="isAvailable" style={{ margin: 0, fontWeight: '500', cursor: 'pointer' }}>Item is Available</label>
                             </div>
 
                             <div className="form-group">
-                                <label>Item Image</label>
+                                <label className="form-label">Item Image</label>
                                 <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
                                     {menuItemForm.imagePreview && (
                                         <img src={menuItemForm.imagePreview} alt="Preview" style={{ width: '60px', height: '60px', borderRadius: '8px', objectFit: 'cover' }} />

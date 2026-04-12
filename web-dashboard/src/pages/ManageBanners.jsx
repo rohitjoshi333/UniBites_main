@@ -199,10 +199,10 @@ const ManageBanners = () => {
                         </div>
                         <form onSubmit={saveBanner} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' }}>
                             <div className="form-group">
-                                <label>Title</label>
+                                <label className="form-label">Title</label>
                                 <input 
                                     type="text" 
-                                    className="form-control" 
+                                    className="form-input" 
                                     value={bannerForm.title}
                                     onChange={(e) => setBannerForm({...bannerForm, title: e.target.value})}
                                     placeholder="e.g. Special Offer!"
@@ -210,9 +210,9 @@ const ManageBanners = () => {
                             </div>
 
                             <div className="form-group">
-                                <label>Description</label>
+                                <label className="form-label">Description</label>
                                 <textarea 
-                                    className="form-control" 
+                                    className="form-textarea" 
                                     rows="3"
                                     value={bannerForm.description}
                                     onChange={(e) => setBannerForm({...bannerForm, description: e.target.value})}
@@ -222,28 +222,29 @@ const ManageBanners = () => {
 
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                                 <div className="form-group">
-                                    <label>Serial Number (Order) *</label>
+                                    <label className="form-label">Serial Number (Order) *</label>
                                     <input 
                                         type="number" 
-                                        className="form-control" 
+                                        className="form-input" 
                                         required 
                                         value={bannerForm.serial_number}
                                         onChange={(e) => setBannerForm({...bannerForm, serial_number: parseInt(e.target.value) || 0})}
                                     />
                                 </div>
-                                <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '1.5rem' }}>
+                                <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '1.5rem', height: '42px' }}>
                                     <input 
                                         type="checkbox" 
                                         id="isActive"
                                         checked={bannerForm.is_active}
                                         onChange={(e) => setBannerForm({...bannerForm, is_active: e.target.checked})}
+                                        style={{ width: '1.25rem', height: '1.25rem', cursor: 'pointer' }}
                                     />
-                                    <label htmlFor="isActive" style={{ margin: 0 }}>Is Active</label>
+                                    <label htmlFor="isActive" style={{ margin: 0, fontWeight: '500', cursor: 'pointer' }}>Is Active</label>
                                 </div>
                             </div>
 
                             <div className="form-group">
-                                <label>Banner Image *</label>
+                                <label className="form-label">Banner Image *</label>
                                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'center' }}>
                                     {bannerForm.imagePreview && (
                                         <div style={{ position: 'relative' }}>
