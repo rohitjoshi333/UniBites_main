@@ -16,6 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as SecureStore from 'expo-secure-store';
 import { getMyOrders, cancelOrder, rateOrder } from '../../services/orderService';
 import { API_BASE_URL } from '../../constants/api';
+import { getErrorMessage } from '../../utils/errorHandler';
 
 const STATUS_CONFIG: Record<string, { color: string; bg: string; icon: any }> = {
     PENDING: { color: '#D97706', bg: '#FEF3C7', icon: 'time-outline' },
@@ -171,12 +172,12 @@ export default function OrdersScreen() {
                         return updated;
                     });
                 }
-            } catch (e) {
-                console.warn('WS message parse error', e);
+            } catch (e: any) {
+                console.log('WS parse error');
             }
         };
 
-        ws.onerror = (e) => console.warn('WS error', e);
+        ws.onerror = () => console.log('WS connection error');
     };
 
     const disconnectWebSocket = () => {
@@ -199,8 +200,8 @@ export default function OrdersScreen() {
                 setHasRated(false);
                 setSelectedRating(0);
             }
-        } catch (e) {
-            console.error('Failed to fetch orders', e);
+        } catch (e: any) {
+            console.log('Failed to fetch orders:', e?.message);
         } finally {
             setLoading(false);
             setRefreshing(false);
@@ -219,9 +220,9 @@ export default function OrdersScreen() {
         try {
             await cancelOrder(orderId);
             fetchOrders();
-        } catch (e) {
-            console.error('Failed to cancel order', e);
-            Alert.alert('Error', 'Failed to cancel order. Please try again.');
+        } catch (e: any) {
+            console.log('Cancel order error:', e?.message);
+            Alert.alert('Error', getErrorMessage(e, 'Failed to cancel order. Please try again.'));
         }
     };
 
@@ -247,9 +248,9 @@ export default function OrdersScreen() {
                 // Mark as rated in local state so UI updates immediately
                 setOrders(prev => prev.map(o => o.id === ratingOrder.id ? { ...o, is_rated: true } : o));
                 sessionDismissedRef.current.add(ratingOrder.id);
-            } catch (e) {
-                console.error('Failed to rate order', e);
-                Alert.alert('Error', 'Could not save your rating. Please try again.');
+            } catch (e: any) {
+                console.log('Rate order error:', e?.message);
+                Alert.alert('Error', getErrorMessage(e, 'Could not save your rating. Please try again.'));
             }
         }
     };

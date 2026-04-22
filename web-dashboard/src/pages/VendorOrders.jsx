@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { ClipboardList, RefreshCw, Clock, ChevronDown, ChevronUp, Phone, Mail, User, AlertCircle, Calendar, Banknote, CreditCard } from 'lucide-react';
-import api from '../services/api';
+import api, { API_BASE_URL } from '../services/api';
 import notificationSound from '../assets/loud_notification.wav';
 import '../styles/dashboard.css';
 
@@ -271,39 +271,70 @@ const VendorOrders = () => {
         return () => clearInterval(timer);
     }, []);
 
-    // WebSocket real-time new order alerts
+    // WebSocket real-time updates (New orders, Cancellations)
     const wsRef = useRef(null);
+    const reconnectTimerRef = useRef(null);
 
-    useEffect(() => {
+    const connectWS = useCallback(() => {
         const token = localStorage.getItem('access_token');
         if (!token) return;
-        
-        // const wsBase = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000')
-        const wsBase = (import.meta.env.VITE_API_BASE_URL || 'https://unibites-nepal-hkaqh5dfdagqfyf7.southeastasia-01.azurewebsites.net')
-            .replace(/^http/, 'ws');
+
+        const baseDomain = API_BASE_URL.replace(/\/api\/?$/, ''); // Strip /api/ or /api
+        const wsBase = baseDomain.replace(/^http/, 'ws');
         const ws = new WebSocket(`${wsBase}/ws/orders/?token=${token}`);
         wsRef.current = ws;
+
+        ws.onopen = () => {
+            console.log('Vendor WS: Connected');
+            if (reconnectTimerRef.current) {
+                clearTimeout(reconnectTimerRef.current);
+                reconnectTimerRef.current = null;
+            }
+        };
 
         ws.onmessage = (event) => {
             try {
                 const msg = JSON.parse(event.data);
                 if (msg.type === 'new_order') {
-                    setOrders(prev => [msg.order, ...prev]);
-
+                    setOrders(prev => {
+                        // Prevent duplicate orders if WS reconnects and sends same data
+                        if (prev.find(o => o.id === msg.order.id)) return prev;
+                        return [msg.order, ...prev];
+                    });
                     playSound();
-
                     document.title = 'New Order! — UniBites';
                     setTimeout(() => { document.title = 'Vendor Orders — UniBites'; }, 3000);
+                } else if (msg.type === 'order_status_update') {
+                    setOrders(prev => prev.map(o => o.id === msg.order_id ? { ...o, status: msg.status } : o));
+                    if (msg.status === 'CANCELLED') {
+                        playSound();
+                        document.title = 'Order Cancelled! — UniBites';
+                        setTimeout(() => { document.title = 'Vendor Orders — UniBites'; }, 3000);
+                    }
                 }
             } catch (e) {
                 console.warn('WS message parse error', e);
             }
         };
 
-        ws.onerror = (e) => console.warn('WS error', e);
+        ws.onclose = () => {
+            console.log('Vendor WS: Closed, reconnecting in 5s...');
+            reconnectTimerRef.current = setTimeout(connectWS, 5000);
+        };
 
-        return () => ws.close();
+        ws.onerror = (e) => {
+            console.warn('WS error', e);
+            ws.close();
+        };
     }, []);
+
+    useEffect(() => {
+        connectWS();
+        return () => {
+            if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
+            if (wsRef.current) wsRef.current.close();
+        };
+    }, [connectWS]);
 
     useEffect(() => { fetchOrders(); }, [fetchOrders]);
 

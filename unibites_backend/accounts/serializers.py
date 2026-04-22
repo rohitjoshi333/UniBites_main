@@ -116,7 +116,7 @@ class VerifyOtpSerializer(serializers.Serializer):
 
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField()
-    password = serializers.CharField()
+    password = serializers.CharField(write_only=True)
 
     def validate(self, data):
         email = data["email"]
@@ -139,6 +139,7 @@ class LoginSerializer(serializers.Serializer):
         data["refresh"] = str(refresh)
         data["role"] = user.role
         data["full_name"] = user.full_name
+        data.pop("password", None)
         return data
 
 class ForgotPasswordSerializer(serializers.Serializer):

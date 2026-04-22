@@ -40,8 +40,8 @@ export const AuthProvider = ({ children }) => {
             setUser({ role, full_name });
             return { success: true, role };
         } catch (error) {
-            console.error("Login failed", error);
-            return { success: false, message: "Invalid email or password." };
+            console.log("Login failed:", error.userMessage);
+            return { success: false, message: error.userMessage || "Invalid email or password." };
         }
     };
 

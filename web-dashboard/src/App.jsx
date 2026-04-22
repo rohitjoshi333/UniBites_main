@@ -60,6 +60,7 @@ const App = () => {
             <Route path="banners" element={<ManageBanners />} />
             <Route path="reports" element={<AdminReports />} />
           </Route>
+          <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

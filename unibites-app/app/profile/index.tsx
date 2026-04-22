@@ -10,13 +10,16 @@ import {
     TextInput,
     Modal,
     KeyboardAvoidingView,
-    Platform
+    Platform,
+    ScrollView,
+    RefreshControl
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { getProfile, updateProfile, changePassword, uploadProfileImage } from '../../services/profileService';
+import { getErrorMessage } from '../../utils/errorHandler';
 
 export default function ProfileScreen() {
     const router = useRouter();
@@ -28,11 +31,15 @@ export default function ProfileScreen() {
     // Edit Form State
     const [editForm, setEditForm] = useState({ full_name: '', phone: '' });
     const [saving, setSaving] = useState(false);
+    const [refreshing, setRefreshing] = useState(false);
 
     // Password Modal State
     const [modalVisible, setModalVisible] = useState(false);
     const [pwdForm, setPwdForm] = useState({ old_password: '', new_password: '', confirm_password: '' });
     const [pwdLoading, setPwdLoading] = useState(false);
+    const [showOldPassword, setShowOldPassword] = useState(false);
+    const [showNewPassword, setShowNewPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
     useEffect(() => {
         fetchProfile();
@@ -43,12 +50,18 @@ export default function ProfileScreen() {
             const data = await getProfile();
             setProfile(data);
             setEditForm({ full_name: data.full_name, phone: data.phone || '' });
-        } catch (error) {
-            console.error(error);
+        } catch (error: any) {
+            console.log('Profile fetch error:', error?.message);
             Alert.alert("Error", "Failed to load profile.");
         } finally {
             setLoading(false);
+            setRefreshing(false);
         }
+    };
+
+    const onRefresh = () => {
+        setRefreshing(true);
+        fetchProfile();
     };
 
     const handlePickImage = async () => {
@@ -74,8 +87,8 @@ export default function ProfileScreen() {
             setProfile((prev: any) => ({ ...prev, profile_image: imageUrl }));
             Alert.alert("Success", "Profile picture updated!");
         } catch (error: any) {
-            console.error(error);
-            Alert.alert("Upload Failed", error.message || "Could not upload image.");
+            console.log('Upload error:', error?.message);
+            Alert.alert("Upload Failed", getErrorMessage(error, "Could not upload image."));
         } finally {
             setUploading(false);
         }
@@ -101,6 +114,11 @@ export default function ProfileScreen() {
             Alert.alert("Validation Error", "Name cannot be empty.");
             return;
         }
+
+        if (/^\d/.test(editForm.full_name.trim())) {
+            Alert.alert("Invalid Name", "Name cannot start with a number.");
+            return;
+        }
         if (editForm.phone && !/^\d{10}$/.test(editForm.phone)) {
             Alert.alert("Validation Error", "Phone number must be 10 digits.");
             return;
@@ -109,12 +127,12 @@ export default function ProfileScreen() {
         setSaving(true);
         try {
             const updated = await updateProfile(editForm);
-            setProfile(updated);
+            setProfile((prev: any) => ({ ...prev, ...updated }));
             setIsEditing(false);
             Alert.alert("Success", "Profile updated successfully.");
         } catch (error: any) {
-            console.error(error);
-            const msg = error.response?.data?.phone?.[0] || error.response?.data?.full_name?.[0] || "Failed to update profile.";
+            console.log('Profile update error:', error?.message);
+            const msg = getErrorMessage(error, "Failed to update profile.");
             Alert.alert("Error", msg);
         } finally {
             setSaving(false);
@@ -142,10 +160,8 @@ export default function ProfileScreen() {
             setModalVisible(false);
             setPwdForm({ old_password: '', new_password: '', confirm_password: '' });
         } catch (error: any) {
-            console.error(error);
-            const msg = error.response?.data?.old_password?.[0] ||
-                error.response?.data?.non_field_errors?.[0] ||
-                "Failed to change password.";
+            console.log('Password change error:', error?.message);
+            const msg = getErrorMessage(error, "Failed to change password.");
             Alert.alert("Error", msg);
         } finally {
             setPwdLoading(false);
@@ -191,83 +207,97 @@ export default function ProfileScreen() {
                 </View>
             </View>
 
-            {/* Profile Details Card */}
-            <View style={styles.card}>
-                <View style={styles.row}>
-                    <Text style={styles.label}>Full Name</Text>
-                    {isEditing ? (
-                        <TextInput
-                            style={styles.input}
-                            value={editForm.full_name}
-                            onChangeText={(text) => setEditForm({ ...editForm, full_name: text })}
-                            placeholderTextColor="#999"
-                        />
-                    ) : (
-                        <Text style={styles.value}>{profile?.full_name}</Text>
-                    )}
-                </View>
+            <ScrollView
+                style={{ flex: 1 }}
+                contentContainerStyle={{ paddingBottom: 40 }}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={onRefresh}
+                        tintColor="#2E3566"
+                        colors={["#2E3566"]}
+                    />
+                }
+            >
 
-                <View style={styles.divider} />
-
-                <View style={styles.row}>
-                    <Text style={styles.label}>Phone</Text>
-                    {isEditing ? (
-                        <TextInput
-                            style={styles.input}
-                            value={editForm.phone}
-                            onChangeText={(text) => setEditForm({ ...editForm, phone: text })}
-                            keyboardType="phone-pad"
-                            maxLength={10}
-                            placeholderTextColor="#999"
-                        />
-                    ) : (
-                        <Text style={styles.value}>{profile?.phone || "Not set"}</Text>
-                    )}
-                </View>
-            </View>
-
-            {/* Action Buttons */}
-            <View style={styles.actions}>
-                {isEditing ? (
-                    <View style={styles.editActions}>
-                        <TouchableOpacity
-                            style={[styles.btn, styles.cancelBtn]}
-                            onPress={() => {
-                                setIsEditing(false);
-                                setEditForm({ full_name: profile.full_name, phone: profile.phone || '' });
-                            }}
-                            disabled={saving}
-                        >
-                            <Text style={styles.btnTextBlack}>Cancel</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={[styles.btn, styles.saveBtn]}
-                            onPress={handleSaveProfile}
-                            disabled={saving}
-                        >
-                            {saving ? <ActivityIndicator color="#fff" /> : <Text style={styles.btnTextWhite}>Save Changes</Text>}
-                        </TouchableOpacity>
+                {/* Profile Details Card */}
+                <View style={styles.card}>
+                    <View style={styles.row}>
+                        <Text style={styles.label}>Full Name</Text>
+                        {isEditing ? (
+                            <TextInput
+                                style={styles.input}
+                                value={editForm.full_name}
+                                onChangeText={(text) => setEditForm({ ...editForm, full_name: text })}
+                                placeholderTextColor="#999"
+                            />
+                        ) : (
+                            <Text style={styles.value}>{profile?.full_name}</Text>
+                        )}
                     </View>
-                ) : (
-                    <TouchableOpacity style={styles.outlineBtn} onPress={() => setIsEditing(true)}>
-                        <Ionicons name="create-outline" size={20} color="#2E3566" />
-                        <Text style={styles.outlineBtnText}>Edit Profile</Text>
+
+                    <View style={styles.divider} />
+
+                    <View style={styles.row}>
+                        <Text style={styles.label}>Phone</Text>
+                        {isEditing ? (
+                            <TextInput
+                                style={styles.input}
+                                value={editForm.phone}
+                                onChangeText={(text) => setEditForm({ ...editForm, phone: text })}
+                                keyboardType="phone-pad"
+                                maxLength={10}
+                                placeholderTextColor="#999"
+                            />
+                        ) : (
+                            <Text style={styles.value}>{profile?.phone || "Not set"}</Text>
+                        )}
+                    </View>
+                </View>
+
+                {/* Action Buttons */}
+                <View style={styles.actions}>
+                    {isEditing ? (
+                        <View style={styles.editActions}>
+                            <TouchableOpacity
+                                style={[styles.btn, styles.cancelBtn]}
+                                onPress={() => {
+                                    setIsEditing(false);
+                                    setEditForm({ full_name: profile.full_name, phone: profile.phone || '' });
+                                }}
+                                disabled={saving}
+                            >
+                                <Text style={styles.btnTextBlack}>Cancel</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[styles.btn, styles.saveBtn]}
+                                onPress={handleSaveProfile}
+                                disabled={saving}
+                            >
+                                {saving ? <ActivityIndicator color="#fff" /> : <Text style={styles.btnTextWhite}>Save Changes</Text>}
+                            </TouchableOpacity>
+                        </View>
+                    ) : (
+                        <TouchableOpacity style={styles.outlineBtn} onPress={() => setIsEditing(true)}>
+                            <Ionicons name="create-outline" size={20} color="#2E3566" />
+                            <Text style={styles.outlineBtnText}>Edit Profile</Text>
+                        </TouchableOpacity>
+                    )}
+
+                    <TouchableOpacity
+                        style={[styles.outlineBtn, { marginTop: 12 }]}
+                        onPress={() => setModalVisible(true)}
+                    >
+                        <Ionicons name="key-outline" size={20} color="#2E3566" />
+                        <Text style={styles.outlineBtnText}>Change Password</Text>
                     </TouchableOpacity>
-                )}
 
-                <TouchableOpacity
-                    style={[styles.outlineBtn, { marginTop: 12 }]}
-                    onPress={() => setModalVisible(true)}
-                >
-                    <Ionicons name="key-outline" size={20} color="#2E3566" />
-                    <Text style={styles.outlineBtnText}>Change Password</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
-                    <Ionicons name="log-out-outline" size={20} color="#FF4545" />
-                    <Text style={styles.logoutText}>Logout</Text>
-                </TouchableOpacity>
-            </View>
+                    <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
+                        <Ionicons name="log-out-outline" size={20} color="#FF4545" />
+                        <Text style={styles.logoutText}>Logout</Text>
+                    </TouchableOpacity>
+                </View>
+            </ScrollView>
 
             {/* Change Password Modal */}
             <Modal
@@ -283,30 +313,47 @@ export default function ProfileScreen() {
                     <View style={styles.modalContent}>
                         <Text style={styles.modalTitle}>Change Password</Text>
 
-                        <TextInput
-                            style={styles.modalInput}
-                            placeholder="Current Password"
-                            placeholderTextColor="#999"
-                            secureTextEntry
-                            value={pwdForm.old_password}
-                            onChangeText={(t) => setPwdForm({ ...pwdForm, old_password: t })}
-                        />
-                        <TextInput
-                            style={styles.modalInput}
-                            placeholder="New Password (min 8 chars)"
-                            placeholderTextColor="#999"
-                            secureTextEntry
-                            value={pwdForm.new_password}
-                            onChangeText={(t) => setPwdForm({ ...pwdForm, new_password: t })}
-                        />
-                        <TextInput
-                            style={styles.modalInput}
-                            placeholder="Confirm New Password"
-                            placeholderTextColor="#999"
-                            secureTextEntry
-                            value={pwdForm.confirm_password}
-                            onChangeText={(t) => setPwdForm({ ...pwdForm, confirm_password: t })}
-                        />
+                        <View style={styles.passwordContainer}>
+                            <TextInput
+                                style={styles.passwordInput}
+                                placeholder="Current Password"
+                                placeholderTextColor="#999"
+                                secureTextEntry={!showOldPassword}
+                                value={pwdForm.old_password}
+                                onChangeText={(t) => setPwdForm({ ...pwdForm, old_password: t })}
+                            />
+                            <TouchableOpacity style={styles.eyeIcon} onPress={() => setShowOldPassword(!showOldPassword)}>
+                                <Ionicons name={showOldPassword ? "eye-off-outline" : "eye-outline"} size={20} color="#999" />
+                            </TouchableOpacity>
+                        </View>
+
+                        <View style={styles.passwordContainer}>
+                            <TextInput
+                                style={styles.passwordInput}
+                                placeholder="New Password (min 8 chars)"
+                                placeholderTextColor="#999"
+                                secureTextEntry={!showNewPassword}
+                                value={pwdForm.new_password}
+                                onChangeText={(t) => setPwdForm({ ...pwdForm, new_password: t })}
+                            />
+                            <TouchableOpacity style={styles.eyeIcon} onPress={() => setShowNewPassword(!showNewPassword)}>
+                                <Ionicons name={showNewPassword ? "eye-off-outline" : "eye-outline"} size={20} color="#999" />
+                            </TouchableOpacity>
+                        </View>
+
+                        <View style={styles.passwordContainer}>
+                            <TextInput
+                                style={styles.passwordInput}
+                                placeholder="Confirm New Password"
+                                placeholderTextColor="#999"
+                                secureTextEntry={!showConfirmPassword}
+                                value={pwdForm.confirm_password}
+                                onChangeText={(t) => setPwdForm({ ...pwdForm, confirm_password: t })}
+                            />
+                            <TouchableOpacity style={styles.eyeIcon} onPress={() => setShowConfirmPassword(!showConfirmPassword)}>
+                                <Ionicons name={showConfirmPassword ? "eye-off-outline" : "eye-outline"} size={20} color="#999" />
+                            </TouchableOpacity>
+                        </View>
 
                         <View style={styles.modalActions}>
                             <TouchableOpacity
@@ -326,7 +373,6 @@ export default function ProfileScreen() {
                     </View>
                 </KeyboardAvoidingView>
             </Modal>
-
         </View>
     );
 }
@@ -550,6 +596,24 @@ const styles = StyleSheet.create({
         fontSize: 16,
         borderWidth: 1,
         borderColor: '#E0E0E0',
+    },
+    passwordContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#F7F7F7',
+        borderWidth: 1,
+        borderColor: '#E0E0E0',
+        borderRadius: 12,
+        marginBottom: 12,
+    },
+    passwordInput: {
+        flex: 1,
+        color: '#333',
+        padding: 14,
+        fontSize: 16,
+    },
+    eyeIcon: {
+        padding: 14,
     },
     modalActions: {
         flexDirection: 'row',

@@ -15,6 +15,7 @@ import { useLocalSearchParams, Stack, useRouter, useFocusEffect } from "expo-rou
 import { Ionicons } from "@expo/vector-icons";
 import { API_BASE_URL } from "../../constants/api";
 import { addToCart, getCart, updateCartItem, removeCartItem } from "../../services/cartService";
+import { safeJsonParse, getErrorMessage } from "../../utils/errorHandler";
 
 type MenuItem = {
     id: number;
@@ -50,12 +51,14 @@ export default function MenuScreen() {
 
     const fetchMenu = async () => {
         try {
-            const response = await fetch(`${API_BASE_URL}/api/vendor/public/menu/${canteenId}/`);
+            const response = await fetch(`${API_BASE_URL}/api/vendor/public/menu/${canteenId}/`, {
+                headers: { "ngrok-skip-browser-warning": "true" },
+            });
             if (!response.ok) throw new Error("Failed to fetch menu");
-            const data = await response.json();
-            setItems(data);
-        } catch (error) {
-            console.error("Error fetching menu:", error);
+            const data = await safeJsonParse(response);
+            if (data) setItems(data);
+        } catch (error: any) {
+            console.log("Menu fetch error:", error?.message);
         }
     };
 
@@ -76,7 +79,7 @@ export default function MenuScreen() {
                 count: cartData.items.length,
                 price: cartData.total_price
             });
-        } catch (error) {
+        } catch (error: any) {
             console.log("Cart fetch error (likely empty)", error);
             setCartItems({});
             setCartTotal({ count: 0, price: 0 });
@@ -88,13 +91,14 @@ export default function MenuScreen() {
         const url = `${API_BASE_URL}/api/canteens/${canteenId}/reviews/`;
         console.log("Fetching reviews from:", url);
         try {
-            const response = await fetch(url);
-            console.log("Fetch reviews response status:", response.status);
+            const response = await fetch(url, {
+                headers: { "ngrok-skip-browser-warning": "true" },
+            });
             if (!response.ok) throw new Error(`Failed to fetch reviews: ${response.status}`);
-            const data = await response.json();
-            setReviews(data);
-        } catch (error) {
-            console.error("Error fetching reviews:", error);
+            const data = await safeJsonParse(response);
+            if (data) setReviews(data);
+        } catch (error: any) {
+            console.log("Reviews fetch error:", error?.message);
         } finally {
             setReviewsLoading(false);
         }
@@ -115,6 +119,7 @@ export default function MenuScreen() {
     useFocusEffect(
         useCallback(() => {
             fetchCartData();
+            setSearchQuery('');
         }, [])
     );
 
@@ -162,8 +167,8 @@ export default function MenuScreen() {
                 }
             }
             await fetchCartData();
-        } catch (error) {
-            console.error("Update error", error);
+        } catch (error: any) {
+            console.log("Cart update error:", error?.message);
             fetchCartData();
         }
     };
@@ -197,14 +202,14 @@ export default function MenuScreen() {
                         <View style={styles.overlay} />
                         <View style={styles.bannerContent}>
                             <Text style={styles.bannerTitle}>{canteenName || "Canteen"}</Text>
-                            
+
                             {canteenLocation && (
                                 <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 6 }}>
                                     <Ionicons name="location" size={14} color="#E5E7EB" />
                                     <Text style={{ color: '#E5E7EB', fontSize: 13, marginLeft: 4 }}>{canteenLocation}</Text>
                                 </View>
                             )}
-                            
+
                             {canteenOpeningTime && canteenClosingTime && (
                                 <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
                                     <Ionicons name="time" size={14} color="#E5E7EB" />
@@ -299,14 +304,16 @@ export default function MenuScreen() {
                                                     <Text style={styles.itemPrice}>Rs. {item.price}</Text>
                                                 </View>
                                                 <View style={styles.imageContainer}>
-                                                    <Image
-                                                        source={
-                                                            item.image_url
-                                                                ? { uri: item.image_url }
-                                                                : require("../../assets/images/UniBites.png")
-                                                        }
-                                                        style={styles.itemImage}
-                                                    />
+                                                    {item.image_url ? (
+                                                        <Image
+                                                            source={{ uri: item.image_url }}
+                                                            style={styles.itemImage}
+                                                        />
+                                                    ) : (
+                                                        <View style={[styles.itemImage, { backgroundColor: '#f1f5f9', justifyContent: 'center', alignItems: 'center' }]}>
+                                                            <Ionicons name="fast-food-outline" size={40} color="#cbd5e1" />
+                                                        </View>
+                                                    )}
                                                     <View style={styles.actionContainer}>
                                                         {!item.is_available ? (
                                                             <View style={styles.unavailableBadge}>

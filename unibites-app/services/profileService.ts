@@ -4,6 +4,7 @@ import * as SecureStore from 'expo-secure-store';
 
 const api = axios.create({
     baseURL: `${API_BASE_URL}/api`,
+    headers: { 'ngrok-skip-browser-warning': 'true' },
 });
 
 api.interceptors.request.use(async (config) => {
@@ -13,6 +14,14 @@ api.interceptors.request.use(async (config) => {
     }
     return config;
 });
+
+api.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        console.log('API error:', error?.response?.status, error?.response?.data?.message);
+        return Promise.reject(error);
+    }
+);
 
 export const getProfile = async () => {
     const response = await api.get('profile/');
@@ -48,6 +57,7 @@ export const uploadProfileImage = async (imageUri: string): Promise<string> => {
         headers: {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'multipart/form-data',
+            'ngrok-skip-browser-warning': 'true',
         },
         body: formData,
     });

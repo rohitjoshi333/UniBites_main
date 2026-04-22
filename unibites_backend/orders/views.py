@@ -60,10 +60,10 @@ def parse_and_validate_scheduled_time(scheduled_time_str):
         return None, "Invalid scheduled_time format. Use ISO 8601."
 
     now = timezone.now()
-    min_time = now + timedelta(minutes=5)
+    min_time = now + timedelta(minutes=15)
 
     if scheduled_time < min_time:
-        return None, "Scheduled time must be at least 5 minutes (testing ho hai guys chill :))"
+        return None, "Scheduled time must be at least 15 minutes away from the current time."
 
     # Same-day check (in local time).
     local_now = timezone.localtime(now)

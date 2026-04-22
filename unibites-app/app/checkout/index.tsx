@@ -14,7 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { getCart } from '../../services/cartService';
 import { placeOrder, initiateEsewaPayment } from '../../services/orderService';
 
-const MIN_LEAD_MINUTES = 5;
+const MIN_LEAD_MINUTES = 15;
 
 function getMinPickupDate(): Date {
     const d = new Date();
@@ -77,8 +77,8 @@ const CheckoutScreen = () => {
         try {
             const data = await getCart();
             setCart(data);
-        } catch (e) {
-            console.error('Failed to load cart', e);
+        } catch (e: any) {
+            console.log('Failed to load cart:', e?.message);
         } finally {
             setLoading(false);
         }

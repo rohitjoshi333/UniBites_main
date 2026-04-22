@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, X, Upload } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Upload, UtensilsCrossed } from 'lucide-react';
 import api from '../services/api';
 import '../styles/dashboard.css';
 
@@ -82,6 +82,12 @@ const VendorMenuManagement = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        if (/^\d/.test(formData.name.trim())) {
+            alert('Menu item name cannot start with a number.');
+            return;
+        }
+
         const data = new FormData();
         data.append('name', formData.name);
         data.append('description', formData.description);
@@ -147,11 +153,17 @@ const VendorMenuManagement = () => {
                 <div className="menu-grid">
                     {items.map(item => (
                         <div key={item.id} className="menu-item-card">
-                            <img
-                                src={item.image_url || 'https://via.placeholder.com/300x200?text=No+Image'}
-                                alt={item.name}
-                                className="menu-image"
-                            />
+                            {item.image_url ? (
+                                <img
+                                    src={item.image_url}
+                                    alt={item.name}
+                                    className="menu-image"
+                                />
+                            ) : (
+                                <div className="menu-image" style={{ backgroundColor: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#cbd5e1' }}>
+                                    <UtensilsCrossed size={48} />
+                                </div>
+                            )}
                             <div className="menu-details">
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
                                     <h3 className="menu-name">{item.name}</h3>

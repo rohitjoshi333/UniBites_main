@@ -80,6 +80,12 @@ const ManageBanners = () => {
 
     const saveBanner = async (e) => {
         e.preventDefault();
+
+        if (bannerForm.title && /^\d/.test(bannerForm.title.trim())) {
+            alert('Banner title cannot start with a number.');
+            return;
+        }
+
         setActionLoading(true);
 
         try {
@@ -111,7 +117,7 @@ const ManageBanners = () => {
             setIsModalOpen(false);
         } catch (error) {
             console.error('Error saving banner:', error);
-            alert(error.response?.data?.error || 'Failed to save banner.');
+            alert(error.userMessage || 'Failed to save banner.');
         } finally {
             setActionLoading(false);
         }

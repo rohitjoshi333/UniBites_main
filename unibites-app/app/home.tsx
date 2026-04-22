@@ -12,6 +12,7 @@ import {
 import { useRouter } from "expo-router";
 import { FontAwesome, Ionicons } from "@expo/vector-icons";
 import { API_BASE_URL } from "../constants/api";
+import { safeJsonParse } from "../utils/errorHandler";
 import * as SecureStore from "expo-secure-store";
 import { useAppContext } from "../contexts/AppContext";
 
@@ -68,32 +69,36 @@ export default function HomeScreen() {
       const token = await SecureStore.getItemAsync("accessToken");
       if (!token) return;
       const res = await fetch(`${API_BASE_URL}/api/profile/`, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${token}`, "ngrok-skip-browser-warning": "true" },
       });
-      const data = await res.json();
-      if (data.full_name) setFullName(data.full_name);
-    } catch (error) {
-      console.log("Failed to fetch user name", error);
+      const data = await safeJsonParse(res);
+      if (data?.full_name) setFullName(data.full_name);
+    } catch (error: any) {
+      console.log("Failed to fetch user name", error?.message);
     }
   };
 
   const fetchCanteens = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/canteens/`);
-      const data = await response.json();
-      setCanteens(data);
-    } catch (error) {
-      console.log("Failed to load canteens", error);
+      const response = await fetch(`${API_BASE_URL}/api/canteens/`, {
+        headers: { "ngrok-skip-browser-warning": "true" },
+      });
+      const data = await safeJsonParse(response);
+      if (data) setCanteens(data);
+    } catch (error: any) {
+      console.log("Failed to load canteens", error?.message);
     }
   };
 
   const fetchBanners = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/banners/`);
-      const data = await response.json();
-      setBanners(data);
-    } catch (error) {
-      console.log("Failed to load banners", error);
+      const response = await fetch(`${API_BASE_URL}/api/banners/`, {
+        headers: { "ngrok-skip-browser-warning": "true" },
+      });
+      const data = await safeJsonParse(response);
+      if (data) setBanners(data);
+    } catch (error: any) {
+      console.log("Failed to load banners", error?.message);
     }
   };
 

@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity, ActivityIndi
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { getCart, updateCartItem, removeCartItem } from '../../services/cartService';
+import { getErrorMessage } from '../../utils/errorHandler';
 
 const CartScreen = () => {
     const router = useRouter();
@@ -15,8 +16,8 @@ const CartScreen = () => {
         try {
             const data = await getCart();
             setCart(data);
-        } catch (error) {
-            console.error("Failed to fetch cart", error);
+        } catch (error: any) {
+            console.log('Cart fetch error:', error?.message);
         } finally {
             setLoading(false);
             setRefreshing(false);
@@ -44,8 +45,8 @@ const CartScreen = () => {
         try {
             await updateCartItem(itemId, newQuantity);
             await fetchCart();
-        } catch (error) {
-            Alert.alert("Error", "Failed to update quantity");
+        } catch (error: any) {
+            Alert.alert("Error", getErrorMessage(error, "Failed to update quantity."));
         } finally {
             setUpdating(false);
         }
@@ -65,8 +66,8 @@ const CartScreen = () => {
                         try {
                             await removeCartItem(itemId);
                             await fetchCart();
-                        } catch (error) {
-                            Alert.alert("Error", "Failed to remove item");
+                        } catch (error: any) {
+                            Alert.alert("Error", getErrorMessage(error, "Failed to remove item."));
                         } finally {
                             setUpdating(false);
                         }
@@ -92,8 +93,8 @@ const CartScreen = () => {
                         try {
                             await Promise.all(cart.items.map((item: any) => removeCartItem(item.id)));
                             await fetchCart();
-                        } catch (error) {
-                            Alert.alert("Error", "Failed to clear cart");
+                        } catch (error: any) {
+                            Alert.alert("Error", getErrorMessage(error, "Failed to clear cart."));
                         } finally {
                             setUpdating(false);
                         }

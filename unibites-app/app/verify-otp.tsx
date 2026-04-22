@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -9,14 +9,23 @@ import {
   Image,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { router, useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams, useFocusEffect } from "expo-router";
 import { API_BASE_URL } from "../constants/api";
+import { getErrorMessage, safeJsonParse } from "../utils/errorHandler";
 
 export default function VerifyOtpScreen() {
   const { email } = useLocalSearchParams<{ email: string }>();
   const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
   const [resendDisabled, setResendDisabled] = useState(false);
+
+  useFocusEffect(
+    useCallback(() => {
+      setOtp("");
+      setLoading(false);
+      setResendDisabled(false);
+    }, [])
+  );
 
   const handleVerify = async () => {
     if (!otp) {
@@ -28,24 +37,26 @@ export default function VerifyOtpScreen() {
       setLoading(true);
       const response = await fetch(`${API_BASE_URL}/api/auth/verify-otp/`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" },
         body: JSON.stringify({
           email: email?.trim(),
           otp: otp.trim(),
         }),
       });
 
-      const data = await response.json();
+      const data = await safeJsonParse(response);
 
       if (!response.ok) {
-        Alert.alert("Error", data.detail || "Invalid OTP");
+        const msg = data?.message || data?.detail || "Invalid OTP. Please try again.";
+        Alert.alert("Error", msg);
         return;
       }
 
       Alert.alert("Success", "Email verified successfully");
       router.replace("/");
-    } catch {
-      Alert.alert("Error", "Network error");
+    } catch (error: any) {
+      console.log('Verify OTP error:', error?.message);
+      Alert.alert("Error", getErrorMessage(error, "Network error. Check your connection."));
     } finally {
       setLoading(false);
     }
@@ -57,14 +68,15 @@ export default function VerifyOtpScreen() {
 
       const response = await fetch(`${API_BASE_URL}/api/auth/resend-otp/`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" },
         body: JSON.stringify({ email: email?.trim() }),
       });
 
-      const data = await response.json();
+      const data = await safeJsonParse(response);
 
       if (!response.ok) {
-        Alert.alert("Error", data.detail || "Failed to resend OTP");
+        const msg = data?.message || data?.detail || "Failed to resend OTP.";
+        Alert.alert("Error", msg);
         setResendDisabled(false);
         return;
       }
@@ -73,8 +85,9 @@ export default function VerifyOtpScreen() {
 
       // prevent spamming resend
       setTimeout(() => setResendDisabled(false), 30000); // 30 sec cooldown
-    } catch {
-      Alert.alert("Error", "Network error");
+    } catch (error: any) {
+      console.log('Resend OTP error:', error?.message);
+      Alert.alert("Error", getErrorMessage(error, "Network error. Check your connection."));
       setResendDisabled(false);
     }
   };

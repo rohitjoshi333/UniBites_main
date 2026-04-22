@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -9,9 +9,12 @@ import {
   ScrollView,
   Image,
   TouchableOpacity,
+  ActivityIndicator,
 } from "react-native";
-import { Link, router } from "expo-router";
+import { Link, router, useFocusEffect } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import { API_BASE_URL } from "../constants/api";
+import { getErrorMessage, safeJsonParse } from "../utils/errorHandler";
 
 export default function RegisterScreen() {
   const [fullName, setFullName] = useState<string>("");
@@ -19,11 +22,30 @@ export default function RegisterScreen() {
   const [phone, setPhone] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [confirmPassword, setConfirmPassword] = useState<string>("");
+  const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
+
+  useFocusEffect(
+    useCallback(() => {
+      setFullName("");
+      setEmail("");
+      setPhone("");
+      setPassword("");
+      setConfirmPassword("");
+      setShowPassword(false);
+      setShowConfirmPassword(false);
+    }, [])
+  );
 
   const handleRegister = async () => {
     if (!fullName || !email || !password || !confirmPassword) {
       Alert.alert("Error", "Please fill all required fields.");
+      return;
+    }
+
+    if (/^\d/.test(fullName.trim())) {
+      Alert.alert("Invalid Name", "Name cannot start with a number.");
       return;
     }
 
@@ -47,6 +69,7 @@ export default function RegisterScreen() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "ngrok-skip-browser-warning": "true",
         },
         body: JSON.stringify({
           full_name: fullName,
@@ -57,10 +80,11 @@ export default function RegisterScreen() {
         }),
       });
 
-      const data = await response.json();
+      const data = await safeJsonParse(response);
 
       if (!response.ok) {
-        Alert.alert("Register failed", data.detail || "Please try again.");
+        const msg = data?.message || data?.detail || "Registration failed. Please try again.";
+        Alert.alert("Register Failed", msg);
         return;
       }
 
@@ -80,9 +104,9 @@ export default function RegisterScreen() {
         ]
       );
 
-    } catch (error) {
-      console.error(error);
-      Alert.alert("Error", "Something went wrong. Check your network.");
+    } catch (error: any) {
+      console.log('Register error:', error?.message);
+      Alert.alert("Error", getErrorMessage(error, "Something went wrong. Check your network."));
     } finally {
       setLoading(false);
     }
@@ -129,23 +153,39 @@ export default function RegisterScreen() {
           />
         </View>
 
-        <TextInput
-          style={styles.input}
-          placeholder="Password"
-          placeholderTextColor="#999"
-          secureTextEntry
-          value={password}
-          onChangeText={setPassword}
-        />
+        <View style={styles.passwordContainer}>
+          <TextInput
+            style={styles.passwordInput}
+            placeholder="Password"
+            placeholderTextColor="#999"
+            secureTextEntry={!showPassword}
+            value={password}
+            onChangeText={setPassword}
+          />
+          <TouchableOpacity
+            style={styles.eyeIcon}
+            onPress={() => setShowPassword(!showPassword)}
+          >
+            <Ionicons name={showPassword ? "eye-off-outline" : "eye-outline"} size={20} color="#999" />
+          </TouchableOpacity>
+        </View>
 
-        <TextInput
-          style={styles.input}
-          placeholder="Confirm Password"
-          placeholderTextColor="#999"
-          secureTextEntry
-          value={confirmPassword}
-          onChangeText={setConfirmPassword}
-        />
+        <View style={styles.passwordContainer}>
+          <TextInput
+            style={styles.passwordInput}
+            placeholder="Confirm Password"
+            placeholderTextColor="#999"
+            secureTextEntry={!showConfirmPassword}
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
+          />
+          <TouchableOpacity
+            style={styles.eyeIcon}
+            onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+          >
+            <Ionicons name={showConfirmPassword ? "eye-off-outline" : "eye-outline"} size={20} color="#999" />
+          </TouchableOpacity>
+        </View>
 
         <View style={styles.imageWrapper}>
           <Image
@@ -154,15 +194,21 @@ export default function RegisterScreen() {
           />
 
           <TouchableOpacity
-            style={styles.primaryBtn}
+            style={[styles.primaryBtn, loading && { opacity: 0.7 }]}
             onPress={handleRegister}
+            disabled={loading}
           >
-            <Text style={styles.primaryText}>Register</Text>
+            {loading ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
+              <Text style={styles.primaryText}>Register</Text>
+            )}
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.secondaryBtn}
+            style={[styles.secondaryBtn, loading && { opacity: 0.5 }]}
             onPress={() => router.push("/")}
+            disabled={loading}
           >
             <Text style={styles.secondaryText}>Already have an account</Text>
           </TouchableOpacity>
@@ -223,6 +269,29 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#333",
     backgroundColor: "#fff",
+  },
+
+  passwordContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 20,
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: "#E2E5EC",
+    borderRadius: 10,
+    backgroundColor: "#fff",
+  },
+
+  passwordInput: {
+    flex: 1,
+    paddingVertical: 13,
+    paddingHorizontal: 14,
+    fontSize: 14,
+    color: "#333",
+  },
+
+  eyeIcon: {
+    padding: 10,
   },
 
   phoneContainer: {

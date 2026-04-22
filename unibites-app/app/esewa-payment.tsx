@@ -56,8 +56,8 @@ const EsewaPaymentScreen = () => {
             if (data.type === 'PAYMENT_SUCCESS' || data.type === 'PAYMENT_FAILED') {
                 router.replace({ pathname: '/payment-success' as any, params: { orderId: data.orderId } });
             }
-        } catch (e) {
-            console.error("WebView Message Error", e);
+        } catch (e: any) {
+            console.log("WebView message parse error");
         }
     };
 

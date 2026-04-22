@@ -4,6 +4,7 @@ import * as SecureStore from 'expo-secure-store';
 
 const api = axios.create({
     baseURL: `${API_BASE_URL}/api`,
+    headers: { 'ngrok-skip-browser-warning': 'true' },
 });
 
 api.interceptors.request.use(async (config) => {
@@ -13,6 +14,14 @@ api.interceptors.request.use(async (config) => {
     }
     return config;
 });
+
+api.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        console.log('Cart API error:', error?.response?.status, error?.response?.data?.message);
+        return Promise.reject(error);
+    }
+);
 
 
 export const getCart = async () => {

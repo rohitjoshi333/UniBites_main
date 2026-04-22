@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -7,15 +7,28 @@ import {
   Alert,
   Image,
   TouchableOpacity,
+  ActivityIndicator,
 } from "react-native";
-import { Link, router } from "expo-router";
+import { Link, router, useFocusEffect } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import { API_BASE_URL } from "../constants/api";
+import { getErrorMessage, safeJsonParse } from "../utils/errorHandler";
 
 import * as SecureStore from 'expo-secure-store';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  useFocusEffect(
+    useCallback(() => {
+      setEmail("");
+      setPassword("");
+      setShowPassword(false);
+    }, [])
+  );
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -24,10 +37,12 @@ export default function LoginScreen() {
     }
 
     try {
+      setLoading(true);
       const response = await fetch(`${API_BASE_URL}/api/auth/login/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "ngrok-skip-browser-warning": "true",
         },
         body: JSON.stringify({
           email,
@@ -35,13 +50,25 @@ export default function LoginScreen() {
         }),
       });
 
-      const data = await response.json();
+      const data = await safeJsonParse(response);
 
       if (!response.ok) {
-        Alert.alert(
-          "Login failed",
-          data.detail || data.non_field_errors?.[0] || "Invalid credentials"
-        );
+        const msg = data?.message || data?.detail || data?.error || data?.non_field_errors?.[0] || "Invalid credentials.";
+
+        // If the backend mentions verifying the email, redirect them to the verify OTP page.
+        if (msg.toLowerCase().includes("verify") || msg.toLowerCase().includes("verified") || msg.toLowerCase().includes("active")) {
+          Alert.alert(
+            "Account Not Verified",
+            "Your account is not verified yet. Would you like to verify it now?",
+            [
+              { text: "Cancel", style: "cancel" },
+              { text: "Verify OTP", onPress: () => router.push({ pathname: "/verify-otp", params: { email } }) }
+            ]
+          );
+          return;
+        }
+
+        Alert.alert("Login Failed", msg);
         return;
       }
 
@@ -65,9 +92,11 @@ export default function LoginScreen() {
         params: { fullName },
       });
 
-    } catch (error) {
-      console.error(error);
-      Alert.alert("Error", "Network error. Check backend connection.");
+    } catch (error: any) {
+      console.log('Login error:', error?.message);
+      Alert.alert("Error", getErrorMessage(error, "Network error. Check your connection."));
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -93,16 +122,27 @@ export default function LoginScreen() {
           autoCapitalize="none"
         />
 
-        <TextInput
-          style={styles.input}
-          placeholder="Password"
-          placeholderTextColor="#999"
-          secureTextEntry
-          value={password}
-          onChangeText={setPassword}
-        />
+        <View style={styles.passwordContainer}>
+          <TextInput
+            style={styles.passwordInput}
+            placeholder="Password"
+            placeholderTextColor="#999"
+            secureTextEntry={!showPassword}
+            value={password}
+            onChangeText={setPassword}
+          />
+          <TouchableOpacity
+            style={styles.eyeIcon}
+            onPress={() => setShowPassword(!showPassword)}
+          >
+            <Ionicons name={showPassword ? "eye-off-outline" : "eye-outline"} size={20} color="#999" />
+          </TouchableOpacity>
+        </View>
 
-        <Text style={styles.forgot} onPress={() => router.push("/forgot-password")}>
+        <Text 
+          style={[styles.forgot, loading && { opacity: 0.5 }]} 
+          onPress={() => !loading && router.push("/forgot-password")}
+        >
           Forgot password?
         </Text>
 
@@ -113,14 +153,22 @@ export default function LoginScreen() {
             style={styles.bgImage}
           />
 
-          {/* Image will be behind the btns as btn is on top of the img */}
-          <TouchableOpacity style={styles.signInBtn} onPress={handleLogin}>
-            <Text style={styles.signInText}>Sign In</Text>
+          <TouchableOpacity
+            style={[styles.signInBtn, loading && { opacity: 0.7 }]}
+            onPress={handleLogin}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
+              <Text style={styles.signInText}>Sign In</Text>
+            )}
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.createBtn}
+            style={[styles.createBtn, loading && { opacity: 0.5 }]}
             onPress={() => router.push("/register")}
+            disabled={loading}
           >
             <Text style={styles.createText}>Create new account</Text>
           </TouchableOpacity>
@@ -173,6 +221,27 @@ const styles = StyleSheet.create({
     padding: 12,
     color: "#333",
     backgroundColor: "#fff",
+  },
+
+  passwordContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 20,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 8,
+    backgroundColor: "#fff",
+  },
+
+  passwordInput: {
+    flex: 1,
+    padding: 12,
+    color: "#333",
+  },
+
+  eyeIcon: {
+    padding: 10,
   },
 
   forgot: {

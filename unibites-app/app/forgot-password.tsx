@@ -1,11 +1,20 @@
-import React, { useState } from "react";
-import { View, Text, TextInput, Alert, StyleSheet, TouchableOpacity } from "react-native";
+import React, { useState, useCallback } from "react";
+import { View, Text, TextInput, Alert, StyleSheet, TouchableOpacity, ActivityIndicator } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import { API_BASE_URL } from "../constants/api";
+import { getErrorMessage, safeJsonParse } from "../utils/errorHandler";
 
 export default function ForgotPasswordScreen() {
   const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  useFocusEffect(
+    useCallback(() => {
+      setEmail("");
+      setLoading(false);
+    }, [])
+  );
 
   const handleSendOtp = async () => {
     if (!email) {
@@ -13,14 +22,42 @@ export default function ForgotPasswordScreen() {
       return;
     }
 
-    await fetch(`${API_BASE_URL}/api/auth/forgot-password/`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email }),
-    });
+    try {
+      setLoading(true);
+      const response = await fetch(`${API_BASE_URL}/api/auth/forgot-password/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" },
+        body: JSON.stringify({ email }),
+      });
 
-    Alert.alert("OTP Sent", "Check your college Outlook inbox for the OTP.");
-    router.push({ pathname: "/reset-password", params: { email } });
+      const data = await safeJsonParse(response);
+
+      if (!response.ok) {
+        const msg = data?.message || data?.detail || data?.error || "Failed to send OTP.";
+
+        if (msg.toLowerCase().includes("verify") || msg.toLowerCase().includes("verified") || msg.toLowerCase().includes("active")) {
+          Alert.alert(
+            "Account Not Verified",
+            "Your account is not verified yet. Do you want to verify it now?",
+            [
+              { text: "Cancel", style: "cancel" },
+              { text: "Verify Now", onPress: () => router.push({ pathname: "/verify-otp", params: { email } }) }
+            ]
+          );
+        } else {
+          Alert.alert("Error", msg);
+        }
+        return;
+      }
+
+      Alert.alert("OTP Sent", "Check your college Outlook inbox for the OTP.");
+      router.push({ pathname: "/reset-password", params: { email } });
+    } catch (error: any) {
+      console.log('Forgot password error:', error?.message);
+      Alert.alert("Error", getErrorMessage(error, "Failed to send OTP. Please try again."));
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -39,8 +76,16 @@ export default function ForgotPasswordScreen() {
         onChangeText={setEmail}
       />
 
-      <TouchableOpacity style={styles.btn} onPress={handleSendOtp}>
-        <Text style={styles.btnText}>Send OTP</Text>
+      <TouchableOpacity
+        style={[styles.btn, loading && { opacity: 0.7 }]}
+        onPress={handleSendOtp}
+        disabled={loading}
+      >
+        {loading ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={styles.btnText}>Send OTP</Text>
+        )}
       </TouchableOpacity>
     </View>
   );

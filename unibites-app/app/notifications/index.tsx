@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { getNotifications, markAsRead, AppNotification } from '../../services/notificationService';
@@ -9,28 +9,38 @@ export default function NotificationsScreen() {
     const router = useRouter();
     const [notifications, setNotifications] = useState<AppNotification[]>([]);
     const [loading, setLoading] = useState(true);
-    const { setUnreadNotifCount } = useAppContext();
+    const [refreshing, setRefreshing] = useState(false);
+    const { unreadNotifCount, setUnreadNotifCount } = useAppContext();
+    const prevCountRef = React.useRef(unreadNotifCount);
 
-    const fetchNotifications = async () => {
+    const fetchNotifications = async (isRefresh = false) => {
+        if (!isRefresh) setLoading(true);
+        else setRefreshing(true);
         try {
             const data = await getNotifications();
             setNotifications(data);
-        } catch (e) {
-            console.error('Fetch errors', e);
+        } catch (e: any) {
+            console.log('Notification fetch error:', e?.message);
         } finally {
             setLoading(false);
+            setRefreshing(false);
         }
     };
 
+    const onRefresh = useCallback(() => {
+        fetchNotifications(true);
+    }, []);
+
     useFocusEffect(useCallback(() => {
-        setLoading(true);
         fetchNotifications();
     }, []));
 
-    // Inject incoming WS notifications from the global context directly into the list.
-    // The AppContext WS already handles bumping the badge count we just update the list here.
     useEffect(() => {
-    }, []);
+        if (unreadNotifCount > prevCountRef.current) {
+            fetchNotifications(true);
+        }
+        prevCountRef.current = unreadNotifCount;
+    }, [unreadNotifCount]);
 
     const handleMarkAllRead = async () => {
         try {
@@ -38,8 +48,8 @@ export default function NotificationsScreen() {
             setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
             // Reset the bell badge in home via shared context
             setUnreadNotifCount(0);
-        } catch (e) {
-            console.error('Mark read error', e);
+        } catch (e: any) {
+            console.log('Mark read error:', e?.message);
         }
     };
 
@@ -50,8 +60,8 @@ export default function NotificationsScreen() {
                 setNotifications(prev => prev.map(n => n.id === notification.id ? { ...n, is_read: true } : n));
                 // Decrement the global bell badge by 1
                 setUnreadNotifCount(prev => Math.max(0, prev - 1));
-            } catch (e) {
-                console.error('Mark read error', e);
+            } catch (e: any) {
+                console.log('Mark read error:', e?.message);
             }
         }
 
@@ -108,6 +118,9 @@ export default function NotificationsScreen() {
                 keyExtractor={item => item.id.toString()}
                 renderItem={renderItem}
                 contentContainerStyle={styles.list}
+                refreshControl={
+                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={["#4F46E5"]} />
+                }
                 ListEmptyComponent={
                     <View style={styles.empty}>
                         <Ionicons name="notifications-off-outline" size={64} color="#CBD5E1" />

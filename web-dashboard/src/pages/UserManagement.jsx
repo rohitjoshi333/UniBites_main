@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Pencil, Trash2, Plus, X, Key } from 'lucide-react';
+import { Pencil, Trash2, Plus, X, Key, Eye, EyeOff } from 'lucide-react';
 import api from '../services/api';
 import '../styles/dashboard.css';
 
@@ -11,6 +11,8 @@ const UserManagement = () => {
     const [showEditModal, setShowEditModal] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [showPasswordModal, setShowPasswordModal] = useState(false);
+    const [showAddPassword, setShowAddPassword] = useState(false);
+    const [showResetPassword, setShowResetPassword] = useState(false);
     const [selectedUser, setSelectedUser] = useState(null);
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
@@ -59,6 +61,12 @@ const UserManagement = () => {
     const handleAdd = async (e) => {
         e.preventDefault();
         setFormError('');
+        
+        if (/^\d/.test(formData.full_name.trim())) {
+            setFormError('Name cannot start with a number.');
+            return;
+        }
+
         try {
             await api.post('admin/users/create/', formData);
             setShowAddModal(false);
@@ -89,6 +97,12 @@ const UserManagement = () => {
     const handleEdit = async (e) => {
         e.preventDefault();
         setFormError('');
+
+        if (/^\d/.test(formData.full_name.trim())) {
+            setFormError('Name cannot start with a number.');
+            return;
+        }
+
         try {
             await api.put(`admin/users/${selectedUser.id}/`, formData);
             setShowEditModal(false);
@@ -127,7 +141,7 @@ const UserManagement = () => {
             setSelectedUser(null);
             fetchUsers();
         } catch (error) {
-            alert(error.response?.data?.error || 'Failed to delete user.');
+            alert(error.userMessage || 'Failed to delete user.');
         }
     };
 
@@ -303,13 +317,22 @@ const UserManagement = () => {
                             </div>
                             <div className="form-group">
                                 <label className="form-label">Password</label>
-                                <input
-                                    type="password"
-                                    className="form-input"
-                                    value={formData.password}
-                                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                                    required
-                                />
+                                <div className="password-input-wrapper">
+                                    <input
+                                        type={showAddPassword ? "text" : "password"}
+                                        className="form-input"
+                                        value={formData.password}
+                                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                        required
+                                    />
+                                    <button
+                                        type="button"
+                                        className="password-toggle-icon"
+                                        onClick={() => setShowAddPassword(!showAddPassword)}
+                                    >
+                                        {showAddPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                    </button>
+                                </div>
                             </div>
                             <div className="form-group">
                                 <label className="form-label">Role</label>
@@ -500,13 +523,22 @@ const UserManagement = () => {
                         <form onSubmit={handlePasswordReset}>
                             <div className="form-group">
                                 <label className="form-label">New Password</label>
-                                <input
-                                    type="password"
-                                    className="form-input"
-                                    value={formData.password}
-                                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                                    required
-                                />
+                                <div className="password-input-wrapper">
+                                    <input
+                                        type={showResetPassword ? "text" : "password"}
+                                        className="form-input"
+                                        value={formData.password}
+                                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                        required
+                                    />
+                                    <button
+                                        type="button"
+                                        className="password-toggle-icon"
+                                        onClick={() => setShowResetPassword(!showResetPassword)}
+                                    >
+                                        {showResetPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                    </button>
+                                </div>
                             </div>
                             <div className="modal-actions">
                                 <button type="button" className="btn btn-secondary" onClick={() => setShowPasswordModal(false)}>Cancel</button>

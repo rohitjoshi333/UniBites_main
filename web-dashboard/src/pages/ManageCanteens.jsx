@@ -91,6 +91,12 @@ const ManageCanteens = () => {
 
     const saveCanteen = async (e) => {
         e.preventDefault();
+
+        if (/^\d/.test(canteenForm.name.trim())) {
+            setCanteenFormError('Canteen name cannot start with a number.');
+            return;
+        }
+
         setActionLoading(true);
         const formData = new FormData();
         formData.append('name', canteenForm.name);
@@ -152,6 +158,12 @@ const ManageCanteens = () => {
 
     const saveMenuItem = async (e) => {
         e.preventDefault();
+
+        if (/^\d/.test(menuItemForm.name.trim())) {
+            alert('Menu item name cannot start with a number.');
+            return;
+        }
+
         setActionLoading(true);
         const formData = new FormData();
         formData.append('name', menuItemForm.name);
@@ -170,7 +182,7 @@ const ManageCanteens = () => {
             setIsMenuItemModalOpen(false);
         } catch (error) {
             console.error('Error saving menu item:', error);
-            alert(error.response?.data?.error || 'Failed to save menu item.');
+            alert(error.userMessage || 'Failed to save menu item.');
         } finally {
             setActionLoading(false);
         }
@@ -378,10 +390,9 @@ const ManageCanteens = () => {
                                 <div className="form-group">
                                     <label className="form-label">Opening Time *</label>
                                     <input
-                                        type="text"
+                                        type="time"
                                         className="form-input"
                                         required
-                                        placeholder="08:00 AM"
                                         value={canteenForm.opening_time}
                                         onChange={(e) => setCanteenForm({ ...canteenForm, opening_time: e.target.value })}
                                     />
@@ -389,10 +400,9 @@ const ManageCanteens = () => {
                                 <div className="form-group">
                                     <label className="form-label">Closing Time *</label>
                                     <input
-                                        type="text"
+                                        type="time"
                                         className="form-input"
                                         required
-                                        placeholder="06:00 PM"
                                         value={canteenForm.closing_time}
                                         onChange={(e) => setCanteenForm({ ...canteenForm, closing_time: e.target.value })}
                                     />
